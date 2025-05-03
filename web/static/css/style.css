@@ -1,0 +1,238 @@
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0b6623; /* Dark Green */
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden; /* Prevent scrollbars */
+}
+
+#join-section {
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#join-section input {
+    padding: 10px;
+    margin-right: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+#join-section button {
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: none;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#join-section button:hover {
+    background-color: #45a049;
+}
+
+#game-container {
+    display: flex;
+    flex-direction: column;
+    width: 95vw; /* Use viewport width */
+    height: 95vh; /* Use viewport height */
+    max-width: 1200px; /* Max width */
+    max-height: 800px; /* Max height */
+    border: 3px solid #c8a97e; /* Wood-like border */
+    border-radius: 10px;
+    background-color: #1a4d2e; /* Darker Green */
+    padding: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative; /* For absolute positioning inside if needed */
+}
+
+#game-info {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+}
+
+#status-message {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+#scores {
+    font-size: 1.1em;
+}
+
+#middle-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Align items vertically */
+    width: 100%;
+    flex-grow: 1; /* Takes up available space */
+    margin-bottom: 15px;
+}
+
+#table-area {
+    display: flex;
+    flex-direction: column; /* Stack deck and trick */
+    align-items: center;
+    justify-content: center; /* Center deck and trick */
+    flex-grow: 1; /* Allow table area to take space */
+    padding: 10px;
+    /* background-color: rgba(0, 0, 0, 0.1); Optional: slight background */
+    border-radius: 5px;
+}
+
+#deck {
+    margin-bottom: 20px; /* Space between deck and trick */
+}
+
+#current-trick {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 130px; /* Ensure space for cards */
+    width: 100%; /* Take width within table-area */
+    border : 2px solid #c8a97e; /* Wood-like border */
+    border-radius: 5px;
+    padding: 4rem;
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent */
+}
+
+.player-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+#opponent-top {
+    width: 100%;
+}
+#opponent-left {
+    height: 100%;
+    justify-content: center;
+} /* Center vertically */
+#opponent-right {
+    height: 100%;
+    justify-content: center;
+} /* Center vertically */
+#player-bottom {
+    width: 100%;
+}
+
+.player-name {
+    font-weight: bold;
+    margin-bottom: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+/* Add styles for team colors and current player highlight */
+.team1 {
+    background-color: red;
+    color: white;
+}
+
+.team2 {
+    background-color: blue;
+    color: white;
+}
+
+.current-player {
+    box-shadow: 0 0 15px 5px yellow;
+    border-radius: 5px;
+}
+
+.player-hand-opponent {
+    display: flex;
+    min-height: 50px; /* Placeholder height */
+}
+#opponent-left .player-hand-opponent,
+#opponent-right .player-hand-opponent {
+    flex-direction: column; /* Stack cards vertically for side players */
+}
+
+#player-hand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 130px; /* Ensure space for cards */
+    width: 100%;
+    padding-top: 10px;
+}
+
+.card-placeholder,
+.card {
+    height: 105px; /* Adjust as needed for image aspect ratio */
+    display: inline-block; /* Changed from flex for img */
+    margin: 0 6px;
+    background-color: transparent; /* Image provides background */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    position: relative;
+    vertical-align: middle; /* Align images nicely if needed */
+    object-fit: contain; /* Ensure image fits within dimensions */
+}
+
+.card img {
+    display: block; /* Remove extra space below image */
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Or 'cover', depending on desired look */
+    border-radius: 5px; /* Match parent slightly */
+}
+
+.card-placeholder {
+    width: 70px; /* Fixed width for placeholder */
+    background-color: #aaa; /* Grey placeholder */
+    color: #eee;
+    font-size: 0.9em;
+    display: flex; /* Keep flex for centering text in placeholder */
+    justify-content: center; /* Center text */
+    align-items: center;
+    border: 2px dashed #888; /* Dashed border for placeholder */
+    object-fit: initial; /* Reset object-fit for placeholder */
+}
+
+.trick-card {
+    margin: 0 8px; /* More space between trick cards */
+}
+
+.card {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.card:hover {
+    transform: translateY(-10px) scale(1.05); /* Lift effect */
+}
+
+/* Utility class */
+.hidden {
+    display: none !important;
+}
+
+.current-player {
+    box-shadow: 0 0 15px 5px yellow; /* Highlight current player */
+    border-radius: 5px;
+}
+
+.playable {
+    cursor: pointer;
+    box-shadow: 0 0 2px 2px yellow;
+}

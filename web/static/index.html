@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tressette Game</title>
+        <link rel="stylesheet" href="css/style.css" />
+    </head>
+    <body>
+        <div id="initial-section">
+            <h2>Create or Join a Game</h2>
+            <div>
+                <label for="player-name-input">Your Name:</label>
+                <input type="text" id="player-name-input" placeholder="Enter your name" />
+                <button id="create-game-button">Create Game</button>
+            </div>
+            <hr />
+            <div>
+                <label for="join-game-code-input">Game Code (to Join):</label>
+                <input type="text" id="join-game-code-input" placeholder="Enter code to join" />
+                <button id="join-game-button">Join Game</button>
+            </div>
+        </div>
+
+        <div id="waiting-section" class="hidden">
+            <h2>Waiting Lobby</h2>
+            <p>Game Code: <strong id="game-code-display"></strong></p>
+            <p id="waiting-status">Waiting for players...</p>
+            <div id="lobby-players">
+                <!-- Player names will appear here -->
+            </div>
+        </div>
+
+        <div id="game-container" class="hidden">
+            <!-- Initially hidden -->
+            <div id="game-info">
+                <div id="status-message">Connecting...</div>
+                <div id="scores">
+                    <span id="team1-score">Team 1: 0</span> |
+                    <span id="team2-score">Team 2: 0</span>
+                </div>
+            </div>
+
+            <div id="opponent-top" class="player-area">
+                <span class="player-name">Opponent 1</span>
+                <div class="player-hand-opponent">
+                    <!-- Opponent card placeholders -->
+                </div>
+            </div>
+
+            <div id="middle-area">
+                <div id="opponent-left" class="player-area">
+                    <span class="player-name">Opponent 2</span>
+                    <div class="player-hand-opponent"></div>
+                </div>
+
+                <div id="table-area">
+                    <div id="current-trick">
+                        <!-- Card placeholders for the trick -->
+                        <div class="card-placeholder trick-card"></div>
+                        <div class="card-placeholder trick-card"></div>
+                        <div class="card-placeholder trick-card"></div>
+                        <div class="card-placeholder trick-card"></div>
+                    </div>
+                </div>
+
+                <div id="opponent-right" class="player-area">
+                    <span class="player-name">Opponent 3</span>
+                    <div class="player-hand-opponent"></div>
+                </div>
+            </div>
+
+            <div id="player-bottom" class="player-area">
+                <span id="my-player-name" class="player-name">You</span>
+                <div id="player-hand">
+                    <!-- Player's cards will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <script src="js/app.js"></script>
+    </body>
+</html>
