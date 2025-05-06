@@ -4,8 +4,8 @@ import "log"
 
 // PlayedCard stores a card along with the index of the player who played it.
 type PlayedCard struct {
-	Card        Card
-	PlayerIndex int
+	Card        Card		`json:"card"`
+	PlayerIndex int			`json:"player_index"` // Index of the player who played the card
 }
 
 // Trick represents a single trick in the Tressette game.
@@ -29,31 +29,31 @@ func (t *Trick) AddCard(card Card, playerIndex int) {
 
 // DetermineWinner determines the winner of the trick based on Tressette rules.
 // Requires the suit that was led for the trick.
-func (t *Trick) DetermineWinner(ledSuit Suit) int {
+func (t *Trick) DetermineWinner(ledSuit Suit) PlayedCard {
 	if len(t.Cards) == 0 {
 		log.Panicf("Error: Cannot determine winner of an empty trick.")
-		return -1 // No cards played yet
 	}
 
 	highestOrderInSuit := -1
-	winnerIndex := -1
+	var card PlayedCard
+	card.PlayerIndex = -1 // Initialize to an invalid player index
 
 	// Find the highest card of the led suit
 	for _, playedCard := range t.Cards {
 		if playedCard.Card.Suit == ledSuit {
 			if playedCard.Card.Order > highestOrderInSuit {
 				highestOrderInSuit = playedCard.Card.Order
-				winnerIndex = playedCard.PlayerIndex
+				card = playedCard // Store the winning card
 			}
 		}
 	}
 
 	// If no card of the led suit was played (shouldn't happen if rules are followed,
 	// but handle defensively), the first player who played (the leader of the trick) wins.
-	if winnerIndex == -1 {
+	if card.PlayerIndex == -1 {
 		log.Panicf("Warning: No card of led suit (%s) found in trick. Assigning win to leader (Player %d).", ledSuit, t.Cards[0].PlayerIndex)
 	}
 
-	t.WinnerIndex = winnerIndex
-	return winnerIndex
+	t.WinnerIndex = card.PlayerIndex
+	return card
 }

@@ -345,17 +345,16 @@ func (g *Game) playCard(playerIndex int, card shared.Card) bool {
 
 	// Check if trick is complete
 	if len(g.CurrentTrick.Cards) == len(g.Players) {
-		g.endTrick() // Handles scoring, next turn/round logic
+		g.broadcastGameState()
+		defer g.endTrick() // Handles scoring, next turn/round logic
 		} else {
 			// Advance turn to the next player
 			g.PlayerTurnIndex = (g.PlayerTurnIndex + 1) % len(g.Players)
 			log.Printf("Game %s: Turn advanced to player %d (%s)", g.ID, g.PlayerTurnIndex, g.Players[g.PlayerTurnIndex].Name)
+			g.broadcastGameState()
 			defer g.notifyCurrentPlayerTurn()
 		}
 		
-	// Broadcast game state update
-	g.broadcastGameState()
-
 	return true
 }
 
@@ -373,17 +372,17 @@ func (g *Game) isValidPlay(player *shared.Player, card shared.Card) bool {
 // endTrick concludes the current trick. Assumes lock is held.
 func (g *Game) endTrick() {
 	log.Printf("Game %s: Ending trick...", g.ID)
-	winnerIndex := g.CurrentTrick.DetermineWinner(g.LedSuit)
-	if winnerIndex == -1 {
+	card := g.CurrentTrick.DetermineWinner(g.LedSuit)
+	if card.PlayerIndex == -1 {
 		log.Panicf("Game %s: Error determining trick winner. No valid winner found.", g.ID)
 		return
 	}
 
-	g.LastTrickWinnerIndex = winnerIndex
-	winningPlayer := g.Players[winnerIndex]
+	g.LastTrickWinnerIndex = card.PlayerIndex
+	winningPlayer := g.Players[card.PlayerIndex]
 	// Find the winning team based on the player index (0 or 2 -> team 0, 1 or 3 -> team 1)
 	// is this good?
-	winningTeam := g.Teams[winnerIndex%2]
+	winningTeam := g.Teams[card.PlayerIndex%2]
 
 	trickCardsForScoring := []shared.Card{}
 	trickCardInfos := make([]shared.Card, len(g.CurrentTrick.Cards)) // For broadcast
@@ -401,13 +400,14 @@ func (g *Game) endTrick() {
 
 	winningTeam.AddScore(trickPoints)
 	log.Printf("Game %s: Trick won by Player %d (%s). Scaled Points: %d. Team %d",
-		g.ID, winnerIndex, winningPlayer.Name, trickPoints, winningTeam.TeamNumber)
+		g.ID, card.PlayerIndex, winningPlayer.Name, trickPoints, winningTeam.TeamNumber)
 
 	// Broadcast trick end info
 	trickEndPayload := protocol.TrickEndPayload{
-		WinnerID: winningPlayer.ID,
-		Cards:    trickCardInfos,
-		Points:   trickPoints,    // Scaled points won
+		Winner: 	card,
+		WinnerID: 	winningPlayer.ID,
+		Cards:    	trickCardInfos,
+		Points:   	trickPoints,    // Scaled points won
 	}
 	trickEndMsg, _ := protocol.NewMessage("trick_end", trickEndPayload)
 	g.broadcast(trickEndMsg)
@@ -416,7 +416,7 @@ func (g *Game) endTrick() {
 	g.CardsOnTable = []shared.Card{}
 	g.CurrentTrick = shared.NewTrick()
 	g.LedSuit = ""
-	g.PlayerTurnIndex = winnerIndex // Winner leads next
+	g.PlayerTurnIndex = card.PlayerIndex // Winner leads next
 
 	// Check if the round is over
 	if isLastTrick {

@@ -295,3 +295,27 @@ body {
     background-color: rgba(0, 0, 255, 0.75); /* Darker blue for selected */
     color: white;
 }
+
+.glow {
+    -webkit-animation: glow 1s ease-in-out infinite alternate;
+    -moz-animation: glow 1s ease-in-out infinite alternate;
+    animation: glow 1s ease-in-out infinite alternate;
+}
+
+@-webkit-keyframes glow {
+    from {
+        box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ffffe0, 0 0 20px #ffffe0; /* Lighter yellow (LightYellow) */
+    }
+    to {
+        box-shadow: 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #fffacd, 0 0 25px #fffacd; /* Slightly deeper yellow (LemonChiffon) */
+    }
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ffffe0, 0 0 20px #ffffe0; /* Lighter yellow (LightYellow) */
+    }
+    to {
+        box-shadow: 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #fffacd, 0 0 25px #fffacd; /* Slightly deeper yellow (LemonChiffon) */
+    }
+}

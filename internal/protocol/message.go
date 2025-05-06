@@ -90,9 +90,10 @@ type GameStatePayload struct {
 }
 
 type TrickEndPayload struct {
-	WinnerID string        `json:"winner_id"`
-	Cards    []shared.Card `json:"cards"`    
-	Points   int           `json:"points"`   
+	Winner		shared.PlayedCard	`json:"winner"`
+	WinnerID	string				`json:"winner_id"`
+	Cards    	[]shared.Card 		`json:"cards"`    
+	Points   	int           		`json:"points"`   
 }
 
 type RoundEndPayload struct {

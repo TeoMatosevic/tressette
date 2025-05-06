@@ -5,6 +5,9 @@ let teamsInfo = null // Store teams info if needed
 let trickCards = [] // Store cards played in the current trick
 let handCards = [] // Store cards in hand
 
+let playDisabled = false // Flag to disable play card action
+let afterTrick = false // Flag to indicate if the trick has ended
+
 // DOM Elements
 const statusMessage = document.getElementById("status-message")
 const playerHandDiv = document.getElementById("player-hand")
@@ -280,8 +283,10 @@ function handleGameState(payload) {
     document.querySelectorAll(".current-player").forEach((el) => el.classList.remove("current-player")) // Remove previous highlights
     document.getElementById(playerPositions[payload.current_player_id]).querySelector(".player-name").classList.add("current-player") // Highlight current player
     const playerName = currentPlayer.name || payload.current_player_id // Fallback to ID if name not found
-    if (currentPlayer.id !== myPlayerId) {
+    if (currentPlayer.id !== myPlayerId && !afterTrick) {
         statusMessage.textContent = `${playerName}'s turn` // Update based on actual name later
+    } else if (!afterTrick) {
+        afterTrick = false // Reset after trick flag
     }
     renderTrick(payload.cards_on_table)
     trickCards = payload.cards_on_table // Store cards in the current trick
@@ -295,21 +300,33 @@ function handlePlayerPlayedCard(payload) {
 }
 
 function handleTrickEnd(payload) {
-    statusMessage.textContent = `Trick won by Player ${payload.winner_id}. Points: ${payload.points}`
+    afterTrick = true // Set flag to indicate trick has ended
+    playDisabled = true // Disable play card action until trick is cleared
     updateScoresAfterTrick(payload.winner_id, payload.points) // Update scores based on trick results
+    const playerNameMaybe = teamsInfo
+        .find((t) => t.players.some((p) => p.id === payload.winner_id))
+        .players.find((p) => p.id === payload.winner_id).name
+    const playerName = playerNameMaybe || payload.winner_id // Fallback to ID if name not found
+    if (payload.winner_id === myPlayerId) {
+        statusMessage.textContent = "You won the trick!"
+    } else {
+        statusMessage.textContent = `${playerName} won the trick!`
+    }
     // Clear the trick area after a short delay
     setTimeout(() => {
         clearTrickDisplay()
         if (payload.winner_id !== myPlayerId) {
-            statusMessage.textContent = "You won the trick!"
-            const playerNameMaybe = teamsInfo
-                .find((t) => t.players.some((p) => p.id === payload.winner_id))
-                .players.find((p) => p.id === payload.winner_id).name
-            const playerName = playerNameMaybe || payload.winner_id // Fallback to ID if name not found
-
             statusMessage.textContent = `Waiting for ${playerName} to lead next trick.`
         }
-    }, 2000) // 2-second delay
+        playDisabled = false // Re-enable play card action
+    }, 5000) // 2-second delay
+    // Make a glow effect on the winning card after 500 ms
+    setTimeout(() => {
+        const winningCard = currentTrickDiv.querySelector(`[data-card-id="${payload.winner.card.Suit}-${payload.winner.card.Rank}"]`)
+        if (winningCard) {
+            winningCard.classList.add("glow")
+        }
+    }, 500)
 }
 
 function handleRoundEnd(payload) {
@@ -371,6 +388,9 @@ function renderHand(hand) {
 
 function renderTrick(cards) {
     // Check if trick is empty. If so return
+    if (cards.length === 0) {
+        return
+    }
     currentTrickDiv.innerHTML = "" // Clear previous trick
     cards.forEach((card) => {
         const cardElement = createCardElement(card, true)
@@ -541,6 +561,9 @@ function setupOpponentNames(players, teams) {
 // --- Player Actions ---
 
 function playCard(card) {
+    if (playDisabled) {
+        return
+    }
     sendMessage("play_card", { suit: card.Suit, rank: card.Rank })
 }
 
