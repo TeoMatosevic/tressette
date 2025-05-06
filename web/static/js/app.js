@@ -12,6 +12,7 @@ const currentTrickDiv = document.getElementById("current-trick")
 const team1ScoreSpan = document.getElementById("team1-score")
 const team2ScoreSpan = document.getElementById("team2-score")
 const myPlayerNameSpan = document.getElementById("my-player-name")
+const teamToggle = document.getElementById("team-toggle")
 
 // New UI Elements
 const initialSection = document.getElementById("initial-section")
@@ -47,6 +48,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initial UI state
     showSection("initial-section")
+
+    addToggleButtonHandlers() // Add toggle button handlers
+
+    const selectedToggle = document.querySelector(".selected")
+    if (selectedToggle) {
+        if (selectedToggle.id === "red") {
+            selectedToggle.classList.add("red-team-selected")
+        }
+        if (selectedToggle.id === "blue") {
+            selectedToggle.classList.add("blue-team-selected")
+        }
+    }
 })
 
 // --- WebSocket Functions ---
@@ -104,12 +117,18 @@ function sendMessage(type, payload) {
 
 function createGame() {
     const name = playerNameInput.value.trim()
+    const selectedTeam = document.querySelector(".selected")
     if (!name) {
         alert("Please enter your name.")
         return
     }
+    if (!selectedTeam) {
+        alert("Please select a team.")
+        return
+    }
+    const team = selectedTeam.id === "red" ? 1 : 2 // Map team ID to team number
     myPlayerName = name
-    sendMessage("create_game", { name })
+    sendMessage("create_game", { name, desired_team: team }) // Send team ID to server
     waitingStatus.textContent = "Creating game..."
     // Clear join code input if user clicks create after typing in join
     if (joinGameCodeInput) joinGameCodeInput.value = ""
@@ -118,6 +137,7 @@ function createGame() {
 function joinGame() {
     const name = playerNameInput.value.trim()
     const gameCode = joinGameCodeInput.value.trim().toUpperCase()
+    const desired_team = document.querySelector(".selected") // Get the selected team
     if (!name) {
         alert("Please enter your name.")
         return
@@ -126,8 +146,13 @@ function joinGame() {
         alert("Please enter the game code to join.")
         return
     }
+    if (!desired_team) {
+        alert("Please select a team.")
+        return
+    }
+    const team = desired_team.id === "red" ? 1 : 2 // Map team ID to team number
     myPlayerName = name
-    sendMessage("join_game", { name, game_code: gameCode })
+    sendMessage("join_game", { name, game_code: gameCode, desired_team: team }) // Send team ID to server
     showSection("waiting-section") // Switch to waiting section on attempting join
     waitingStatus.textContent = "Joining game..."
     gameCodeDisplay.textContent = gameCode
@@ -265,6 +290,7 @@ function handleGameState(payload) {
 function handlePlayerPlayedCard(payload) {
     if (payload.player_id === myPlayerId) {
         removeCardFromHand(payload.card)
+        removeHighlightedCards() // Remove highlight from all cards
     }
 }
 
@@ -300,6 +326,26 @@ function handleGameOver(payload) {
 
 // --- UI Rendering Functions ---
 
+function addToggleButtonHandlers() {
+    teamToggle.addEventListener("click", () => {
+        const selected = document.querySelector(".selected")
+        const notSelected = document.querySelector(".not-selected")
+        if (selected && notSelected) {
+            selected.classList.remove("selected")
+            selected.classList.add("not-selected")
+            notSelected.classList.remove("not-selected")
+            notSelected.classList.add("selected")
+            if (notSelected.id === "red") {
+                notSelected.classList.add("red-team-selected")
+                selected.classList.remove("blue-team-selected")
+            } else if (notSelected.id === "blue") {
+                notSelected.classList.add("blue-team-selected")
+                selected.classList.remove("red-team-selected")
+            }
+        }
+    })
+}
+
 function showSection(sectionId) {
     initialSection.classList.add("hidden")
     waitingSection.classList.add("hidden")
@@ -324,6 +370,7 @@ function renderHand(hand) {
 }
 
 function renderTrick(cards) {
+    // Check if trick is empty. If so return
     currentTrickDiv.innerHTML = "" // Clear previous trick
     cards.forEach((card) => {
         const cardElement = createCardElement(card, true)
@@ -371,10 +418,11 @@ function createCardElement(card, isTrickCard = false) {
 function highlightPlayableCards() {
     const validMoves = trickCards.length === 0 ? handCards : handCards.filter((card) => trickCards[0].Suit === card.Suit)
 
-    // Remove highlight from all cards first
-    playerHandDiv.querySelectorAll(".card").forEach((cardEl) => {
-        cardEl.classList.remove("playable")
-    })
+    if (validMoves.length === 0) {
+        validMoves.push(...handCards) // If no valid moves, all cards are playable
+    }
+
+    removeHighlightedCards() // Clear previous highlights
 
     if (validMoves && validMoves.length > 0) {
         validMoves.forEach((card) => {
@@ -385,6 +433,13 @@ function highlightPlayableCards() {
             }
         })
     }
+}
+
+function removeHighlightedCards() {
+    // Remove highlight from all cards
+    playerHandDiv.querySelectorAll(".card").forEach((cardEl) => {
+        cardEl.classList.remove("playable")
+    })
 }
 
 function resetScores() {

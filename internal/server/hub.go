@@ -206,6 +206,7 @@ func (h *Hub) handleCreateGame(client *Client, msg protocol.Message) {
 	// Update client state and create lobby
 	h.clientMu.Lock()
 	client.Name = payload.Name
+	client.DesiredTeam = payload.DesiredTeam // Set desired team
 	h.clientToGame[client] = gameCode
 	h.clientMu.Unlock()
 
@@ -250,6 +251,11 @@ func (h *Hub) handleJoinGame(client *Client, msg protocol.Message) {
 		h.sendJoinError(client, "Game code cannot be empty.")
 		return
 	}
+	if payload.DesiredTeam != 1 && payload.DesiredTeam != 2 {
+		log.Printf("Client %s tried to join with an invalid desired team: %d", client.ID, payload.DesiredTeam)
+		h.sendJoinError(client, "Invalid desired team.")
+		return
+	}
 	gameCode := strings.ToUpper(payload.GameCode) // Normalize game code
 
 	h.lobbyMu.Lock() // Lock lobbies for modification
@@ -280,6 +286,7 @@ func (h *Hub) handleJoinGame(client *Client, msg protocol.Message) {
 
 	// Add client to lobby
 	client.Name = payload.Name // Set name before adding to lobby list
+	client.DesiredTeam = payload.DesiredTeam // Set desired team
 	newLobby := append(lobby, client)
 	h.lobbies[gameCode] = newLobby
 	h.lobbyMu.Unlock() // Unlock lobbyMu after modification
@@ -391,7 +398,7 @@ func convertClientsToGamePlayers(clients []*Client) [4]*shared.Player {
 			// Handle error: return empty, panic, or skip? Returning empty for now.
 			return [4]*shared.Player{}
 		}
-		gamePlayers[i] = shared.NewPlayer(c.ID, c.Name)
+		gamePlayers[i] = shared.NewPlayer(c.ID, c.Name, c.DesiredTeam)
 	}
 	return gamePlayers
 }

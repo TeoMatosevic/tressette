@@ -4,6 +4,7 @@ import (
 	"encoding/json" 
 	"log"         
 
+	"tressette-game/internal/shared"
 	"tressette-game/internal/protocol"
 
 	"github.com/gorilla/websocket"
@@ -11,11 +12,12 @@ import (
 
 // Client represents a single WebSocket connection.
 type Client struct {
-	hub  *Hub
-	conn *websocket.Conn
-	send chan []byte
-	ID   string // Unique identifier for the client/player
-	Name string // Player's chosen name
+	hub  			*Hub
+	conn 			*websocket.Conn
+	send 			chan []byte
+	ID   			string // Unique identifier for the client/player
+	Name 			string // Player's chosen name
+	DesiredTeam 	shared.TeamEnum // Desired team for the player
 }
 
 // ReadPump handles incoming messages from the WebSocket connection.

@@ -107,9 +107,10 @@ body {
     align-items: center;
     min-height: 130px; /* Ensure space for cards */
     width: 100%; /* Take width within table-area */
-    border : 2px solid #c8a97e; /* Wood-like border */
+    border: 2px solid #c8a97e; /* Wood-like border */
     border-radius: 5px;
-    padding: 4rem;
+    padding: 10px;
+    margin: 4rem;
     background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent */
 }
 
@@ -161,7 +162,7 @@ body {
 
 .player-hand-opponent {
     display: flex;
-    min-height: 50px; /* Placeholder height */
+    min-height: 100px; /* Placeholder height */
 }
 #opponent-left .player-hand-opponent,
 #opponent-right .player-hand-opponent {
@@ -235,4 +236,62 @@ body {
 .playable {
     cursor: pointer;
     box-shadow: 0 0 2px 2px yellow;
+}
+
+#desired-team-toggle {
+    margin-top: 10px;
+}
+
+#team-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #c8a97e; /* Wood-like border */
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+}
+
+#team-toggle div {
+    width: 50%;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #c8a97e; /* Wood-like border */
+    user-select: none; /* Prevent text selection */
+}
+
+#team-toggle #red {
+    border: 1px solid #c8a97e; /* Right border */
+    border-right: 0px;
+    border-radius: 5px 0 0 5px; /* Rounded left side */
+}
+
+#team-toggle #blue {
+    border: 1px solid #c8a97e; /* Left border */
+    border-left: 0px;
+    border-radius: 0 5px 5px 0; /* Rounded right side */
+}
+
+.team-red {
+    background-color: rgba(255, 0, 0, 0.1); /* Red team color */
+    color: white;
+}
+
+.team-blue {
+    background-color: rgba(0, 0, 255, 0.1); /* Blue team color */
+    color: white;
+}
+
+.red-team-selected {
+    background-color: rgba(255, 0, 0, 0.75); /* Darker red for selected */
+    color: white;
+}
+
+.blue-team-selected {
+    background-color: rgba(0, 0, 255, 0.75); /* Darker blue for selected */
+    color: white;
 }

@@ -2,17 +2,19 @@ package shared
 
 // Player represents a player in the Tressette game.
 type Player struct {
-	ID   string // Unique identifier for the player
-	Name string // Player's chosen name
-	Hand []Card // Cards currently held by the player
+	ID   		string 		// Unique identifier for the player
+	Name 		string 		// Player's chosen name
+	Hand 		[]Card 		// Cards currently held by the player
+	DesiredTeam TeamEnum 	// Desired team for the player
 }
 
 // NewPlayer creates a new player with the given ID and name.
-func NewPlayer(id string, name string) *Player {
+func NewPlayer(id string, name string, desired_team TeamEnum) *Player {
 	return &Player{
-		ID:   id,
-		Name: name, // Initialize name
-		Hand: []Card{},
+		ID:   			id,
+		Name:			name, // Initialize name
+		Hand: 			[]Card{},
+		DesiredTeam: 	desired_team, // Initialize desired team
 	}
 }
 

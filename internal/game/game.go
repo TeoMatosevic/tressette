@@ -46,16 +46,89 @@ type Game struct {
 
 // NewGame initializes a new game instance.
 func NewGame(players [4]*shared.Player, targetScore int) *Game {
-	teams := [2]*shared.Team{
-		shared.NewTeam(1, players[0], players[2]),
-		shared.NewTeam(2, players[1], players[3]),
+	var teams [2]*shared.Team
+	var newPlayers [4]*shared.Player
+	var first, second, third, fourth *shared.Player
+	if players[0].DesiredTeam == shared.TeamRed {
+		first = players[0]
+	} else {
+		second = players[0]
+	}
+	if players[1].DesiredTeam == shared.TeamRed {
+		if players[0].DesiredTeam == shared.TeamRed {
+			third = players[1]
+		} else {
+			first = players[1]
+		}
+	} else {
+		if players[0].DesiredTeam == shared.TeamRed {
+			second = players[1]
+		} else {
+			fourth = players[1]
+		}
+	}
+	if players[2].DesiredTeam == shared.TeamRed {
+		if players[0].DesiredTeam == shared.TeamRed {
+			if players[1].DesiredTeam == shared.TeamRed {
+				second = players[2]
+			} else {
+				third = players[2]
+			}
+		} else {
+			if players[1].DesiredTeam == shared.TeamRed {
+				third = players[2]
+			} else {
+				first = players[2]
+			}
+		}
+	} else {
+		if players[0].DesiredTeam == shared.TeamRed {
+			if players[1].DesiredTeam == shared.TeamRed {
+				second = players[2]
+			} else {
+				fourth = players[2]
+			}
+		} else {
+			if players[1].DesiredTeam == shared.TeamRed {
+				fourth = players[2]
+			} else {
+				first = players[2]
+			}
+		}
+	}
+	var red_count, blue_count int
+	if players[0].DesiredTeam == shared.TeamRed {
+		red_count++
+	} else {
+		blue_count++
+	}
+	if players[1].DesiredTeam == shared.TeamRed {
+		red_count++
+	} else {
+		blue_count++
+	}
+	if players[2].DesiredTeam == shared.TeamRed {
+		red_count++
+	} else {
+		blue_count++
+	}
+	if red_count > blue_count {
+		fourth = players[3]
+	} else {
+		third = players[3]
 	}
 
+	teams[0] = shared.NewTeam(1, first, third) // Team 1 (Red)
+	teams[1] = shared.NewTeam(2, second, fourth) // Team 2 (Blue)
+	newPlayers[0] = first
+	newPlayers[1] = second
+	newPlayers[2] = third
+	newPlayers[3] = fourth
 	gameID := uuid.New().String()
 
 	return &Game{
 		ID:                 	gameID,
-		Players:            	players,
+		Players:            	newPlayers,
 		Teams:              	teams,
 		Deck:               	shared.NewDeck(),
 		CurrentTrick:       	shared.NewTrick(),

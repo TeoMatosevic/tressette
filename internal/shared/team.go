@@ -2,6 +2,14 @@ package shared
 
 import "github.com/google/uuid"
 
+// TeamEnum represents the two teams in the game.
+type TeamEnum int
+
+const (
+	TeamRed   TeamEnum  = 1           // Team 1 (players 0 and 2)
+	TeamBlue  TeamEnum  = 2           // Team 2 (players 1 and 3)
+)
+
 // Team represents a team in the Tressette game.
 type Team struct {
 	ID         string    	`json:"id"`

@@ -20,6 +20,13 @@
                 <input type="text" id="join-game-code-input" placeholder="Enter code to join" />
                 <button id="join-game-button">Join Game</button>
             </div>
+            <div id="desired-team-toggle">
+                <label for="team-toggle">Choose Team:</label>
+                <div id="team-toggle">
+                    <div id="red" class="team-red selected">Red</div>
+                    <div id="blue" class="team-blue not-selected">Blue</div>
+                </div>
+            </div>
         </div>
 
         <div id="waiting-section" class="hidden">
@@ -51,7 +58,6 @@
             <div id="middle-area">
                 <div id="opponent-left" class="player-area">
                     <span class="player-name">Opponent 2</span>
-                    <div class="player-hand-opponent"></div>
                 </div>
 
                 <div id="table-area">
@@ -66,7 +72,6 @@
 
                 <div id="opponent-right" class="player-area">
                     <span class="player-name">Opponent 3</span>
-                    <div class="player-hand-opponent"></div>
                 </div>
             </div>
 

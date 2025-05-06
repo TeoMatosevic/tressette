@@ -28,7 +28,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		hub:  hub,
 		conn: conn,
 		send: make(chan []byte, 256),
-		// Name, Game, and Player will be assigned later
+		// Name, ID, DesiredTeam will be set later in the process
 	}
 	hub.register <- client
 

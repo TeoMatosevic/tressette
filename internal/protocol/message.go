@@ -14,12 +14,14 @@ type Message struct {
 // --- Client -> Server Payload Structs ---
 
 type CreateGamePayload struct {
-	Name string `json:"name"`
+	Name 		string 				`json:"name"`
+	DesiredTeam shared.TeamEnum 	`json:"desired_team"` // Added desired team
 }
 
 type JoinGamePayload struct {
-	Name     string `json:"name"`
-	GameCode string `json:"game_code"` // Added game code
+	Name     	string 				`json:"name"`
+	GameCode 	string 				`json:"game_code"` // Added game code
+	DesiredTeam shared.TeamEnum 	`json:"desired_team"` // Added desired team
 }
 
 type PlayCardPayload struct {
