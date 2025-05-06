@@ -483,7 +483,7 @@ func (h *Hub) broadcastLobbyUpdate(gameCode string, lobby []*Client) {
 	playerInfos := make([]protocol.PlayerInfo, len(lobby))
 	for i, c := range lobby {
 		if c != nil {
-			playerInfos[i] = protocol.PlayerInfo{ID: c.ID, Name: c.Name}
+			playerInfos[i] = protocol.PlayerInfo{ID: c.ID, Name: c.Name, Position: i} // Use index as position
 		}
 	}
 	payload := protocol.LobbyUpdatePayload{Players: playerInfos}

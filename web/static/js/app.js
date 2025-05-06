@@ -498,6 +498,9 @@ function setupOpponentNames(players, teams) {
         (p) => p.id !== myPlayerId && !teams.some((t) => t.id === myTeamId && t.players.some((tp) => tp.id === p.id))
     )
 
+    const opponentLeft = opponents.find((p) => p.position === (partner.position + 1) % 4)
+    const opponentRight = opponents.find((p) => p.position === (partner.position === 0 ? 3 : partner.position - 1))
+
     if (partner) {
         const partnerSpan = document.querySelector("#opponent-top .player-name")
         if (partnerSpan) {
@@ -517,10 +520,10 @@ function setupOpponentNames(players, teams) {
         const opponentLeftSpan = document.querySelector("#opponent-left .player-name")
         const opponentRightSpan = document.querySelector("#opponent-right .player-name")
         if (opponentLeftSpan && opponentRightSpan) {
-            opponentLeftSpan.textContent = opponents[0].name
-            opponentRightSpan.textContent = opponents[1].name
-            playerPositions[opponents[0].id] = "opponent-left" // Assign position
-            playerPositions[opponents[1].id] = "opponent-right" // Assign position
+            opponentLeftSpan.textContent = opponentLeft.name
+            opponentRightSpan.textContent = opponentRight.name
+            playerPositions[opponentLeft.id] = "opponent-left" // Assign position
+            playerPositions[opponentRight.id] = "opponent-right" // Assign position
             // searching for only one opponent team index, assuming both are on the same team
             const opponentTeamIndex = getTeamIndexByPlayerId(opponents[0].id)
             if (opponentTeamIndex !== -1) {

@@ -52,8 +52,9 @@ type GameWaitPayload struct {
 }
 
 type PlayerInfo struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID   		string `json:"id"`
+	Name 		string `json:"name"`
+	Position 	int    `json:"position"` // Player's position in the game (0-3)
 }
 
 type TeamInfo struct {

@@ -151,15 +151,15 @@ func (g *Game) StartGameLoop(sender MessageSender) {
 	// 1. Send Game Start message to all players
 	playerInfos := make([]protocol.PlayerInfo, 4)
 	for i, p := range g.Players {
-		playerInfos[i] = protocol.PlayerInfo{ID: p.ID, Name: p.Name}
+		playerInfos[i] = protocol.PlayerInfo{ID: p.ID, Name: p.Name, Position: i}
 	}
 	teamInfos := make([]protocol.TeamInfo, 2) 
 	for i, t := range g.Teams {
 		teamInfos[i] = protocol.TeamInfo{
 			ID: t.ID,
 			Players: []protocol.PlayerInfo{
-				{ID: t.Players[0].ID, Name: t.Players[0].Name},
-				{ID: t.Players[1].ID, Name: t.Players[1].Name},
+				{ID: t.Players[0].ID, Name: t.Players[0].Name, Position: i * 2},
+				{ID: t.Players[1].ID, Name: t.Players[1].Name, Position: i*2 + 1},
 			},
 			Score: t.Score,
 			TeamNumber: t.TeamNumber,
