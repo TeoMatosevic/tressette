@@ -7,15 +7,22 @@ let handCards = [] // Store cards in hand
 
 let playDisabled = false // Flag to disable play card action
 let afterTrick = false // Flag to indicate if the trick has ended
+let roundOver = false // Flag to indicate if the round has ended
+let roundOverPayload = null // Store the payload for round over
+let gameOver = false // Flag to indicate if the game is over
 
 // DOM Elements
 const statusMessage = document.getElementById("status-message")
 const playerHandDiv = document.getElementById("player-hand")
 const currentTrickDiv = document.getElementById("current-trick")
-const team1ScoreSpan = document.getElementById("team1-score")
-const team2ScoreSpan = document.getElementById("team2-score")
+const team1ScoreCurrentRoundSpan = document.getElementById("team1-score-current-round")
+const team2ScoreCurrentRoundSpan = document.getElementById("team2-score-current-round")
+const team1ScoreTotalSpan = document.getElementById("team1-score-total")
+const team2ScoreTotalSpan = document.getElementById("team2-score-total")
 const myPlayerNameSpan = document.getElementById("my-player-name")
 const teamToggle = document.getElementById("team-toggle")
+const pointsGoal = document.getElementById("points-goal-input")
+const pointsGoalDisplay = document.getElementById("points-goal")
 
 // New UI Elements
 const initialSection = document.getElementById("initial-section")
@@ -120,9 +127,14 @@ function sendMessage(type, payload) {
 
 function createGame() {
     const name = playerNameInput.value.trim()
+    const pointsGoalValue = pointsGoal.value.trim()
     const selectedTeam = document.querySelector(".selected")
     if (!name) {
         alert("Please enter your name.")
+        return
+    }
+    if (!pointsGoalValue) {
+        alert("Please enter the points goal.")
         return
     }
     if (!selectedTeam) {
@@ -131,7 +143,7 @@ function createGame() {
     }
     const team = selectedTeam.id === "red" ? 1 : 2 // Map team ID to team number
     myPlayerName = name
-    sendMessage("create_game", { name, desired_team: team }) // Send team ID to server
+    sendMessage("create_game", { name, desired_team: team, points_goal: parseInt(pointsGoalValue) }) // Send team ID to server
     waitingStatus.textContent = "Creating game..."
     // Clear join code input if user clicks create after typing in join
     if (joinGameCodeInput) joinGameCodeInput.value = ""
@@ -262,6 +274,7 @@ function handleGameStart(payload) {
         console.error("Could not find my team index!")
     }
     setupOpponentNames(payload.players, payload.teams)
+    pointsGoalDisplay.textContent = `Points Goal: ${payload.points_goal}`
     resetScores()
 }
 
@@ -285,7 +298,7 @@ function handleGameState(payload) {
     const playerName = currentPlayer.name || payload.current_player_id // Fallback to ID if name not found
     if (currentPlayer.id !== myPlayerId && !afterTrick) {
         statusMessage.textContent = `${playerName}'s turn` // Update based on actual name later
-    } else if (!afterTrick) {
+    } else if (afterTrick) {
         afterTrick = false // Reset after trick flag
     }
     renderTrick(payload.cards_on_table)
@@ -315,10 +328,22 @@ function handleTrickEnd(payload) {
     // Clear the trick area after a short delay
     setTimeout(() => {
         clearTrickDisplay()
+        if (gameOver) {
+            return
+        }
         if (payload.winner_id !== myPlayerId) {
             statusMessage.textContent = `Waiting for ${playerName} to lead next trick.`
         }
         playDisabled = false // Re-enable play card action
+        if (roundOver) {
+            statusMessage.textContent = "Round over. Waiting for next round."
+            team1ScoreTotalSpan.textContent = `${roundOverPayload.team1_total_score}`
+            team2ScoreTotalSpan.textContent = `${roundOverPayload.team2_total_score}`
+            // Reset round over flag
+            roundOver = false
+            roundOverPayload = null // Clear the payload
+            resetScores() // Reset scores for the next round
+        }
     }, 5000) // 2-second delay
     // Make a glow effect on the winning card after 500 ms
     setTimeout(() => {
@@ -330,15 +355,29 @@ function handleTrickEnd(payload) {
 }
 
 function handleRoundEnd(payload) {
-    statusMessage.textContent = `Round Over! Scores - T1: ${payload.team1_round_score}, T2: ${payload.team2_round_score}. Total - T1: ${payload.team1_total_score}, T2: ${payload.team2_total_score}`
-    clearBoardForNewRound()
+    roundOver = true // Set flag to indicate round has ended
+    roundOverPayload = payload // Store the payload for round over
 }
 
 function handleGameOver(payload) {
+    // TODO: show team name instead of ID
+    gameOver = true // Set flag to indicate game is over
     statusMessage.textContent = `Game Over! Winning Team: ${payload.winning_team_id}. Final Score: T1 ${payload.final_score_t1} - T2 ${payload.final_score_t2}`
     playerHandDiv.innerHTML = "<p>Game Over</p>"
     currentTrickDiv.innerHTML = ""
-    setTimeout(() => showSection("initial-section"), 10000)
+    setTimeout(() => {
+        showSection("initial-section")
+        myPlayerId = null // Reset player ID
+        myPlayerName = null // Reset player name
+        teamsInfo = null // Reset teams info
+        trickCards = [] // Reset trick cards
+        handCards = [] // Reset hand cards
+        playDisabled = false // Reset play disabled flag
+        afterTrick = false // Reset after trick flag
+        roundOver = false // Reset round over flag
+        roundOverPayload = null // Reset round over payload
+        gameOver = false // Reset game over flag
+    }, 10000)
 }
 
 // --- UI Rendering Functions ---
@@ -466,10 +505,14 @@ function resetScores() {
     // Reset scores for both teams to 0
     teamsInfo.forEach((team) => {
         if (team.team_number === 1) {
-            team1ScoreSpan.textContent = "Red team: 0"
+            team1ScoreCurrentRoundSpan.textContent = "0"
         } else if (team.team_number === 2) {
-            team2ScoreSpan.textContent = "Blue team: 0"
+            team2ScoreCurrentRoundSpan.textContent = "0"
         }
+    })
+
+    teamsInfo.forEach((team) => {
+        team.score = 0 // Reset score for each team
     })
 }
 
@@ -480,19 +523,13 @@ function updateScoresAfterTrick(playerId, points) {
             team.score += points // Add points to the winning team
             if (team.team_number === 1) {
                 const team1Score = team.score % 3 === 0 ? `${team.score / 3}` : `${team.score} / 3`
-                team1ScoreSpan.textContent = `Red team: ${team1Score}`
+                team1ScoreCurrentRoundSpan.textContent = `${team1Score}`
             } else if (team.team_number === 2) {
                 const team2Score = team.score % 3 === 0 ? `${team.score / 3}` : `${team.score} / 3`
-                team2ScoreSpan.textContent = `Blue team: ${team2Score}`
+                team2ScoreCurrentRoundSpan.textContent = `${team2Score}`
             }
         }
     })
-}
-
-// is this function needed?
-function clearBoardForNewRound() {
-    playerHandDiv.innerHTML = "" // Clear hand
-    clearTrickDisplay()
 }
 
 function setupOpponentNames(players, teams) {

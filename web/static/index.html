@@ -13,8 +13,10 @@
                 <label for="player-name-input">Your Name:</label>
                 <input type="text" id="player-name-input" placeholder="Enter your name" />
                 <button id="create-game-button">Create Game</button>
+                <hr />
+                <label for="points-goal-input">Points Goal:</label>
+                <input type="number" id="points-goal-input" value="51" min="1" max="101" />
             </div>
-            <hr />
             <div>
                 <label for="join-game-code-input">Game Code (to Join):</label>
                 <input type="text" id="join-game-code-input" placeholder="Enter code to join" />
@@ -43,9 +45,18 @@
             <div id="game-info">
                 <div id="status-message">Connecting...</div>
                 <div id="scores">
-                    <span id="team1-score">Team 1: 0</span> |
-                    <span id="team2-score">Team 2: 0</span>
+                    <div id="team1-score">
+                        <span>Red: </span>
+                        <span id="team1-score-current-round">0</span>
+                        <span id="team1-score-total">0</span>
+                    </div>
+                    <div id="team2-score">
+                        <span>Blue: </span>
+                        <span id="team2-score-current-round">0</span>
+                        <span id="team2-score-total">0</span>
+                    </div>
                 </div>
+                <div id="points-goal"></div>
             </div>
 
             <div id="opponent-top" class="player-area">

@@ -40,6 +40,7 @@ type Game struct {
 	CardsOnTable       		[]shared.Card     	`json:"cards_on_table"`
 	LedSuit            		shared.Suit       	`json:"led_suit"` 
 	LastTrickWinnerIndex 	int              	`json:"last_trick_winner_index"`
+	LastRoundStartIndex		int              	`json:"last_round_start_index"`
 	mu                 		sync.Mutex       
 	sendMessage        		MessageSender    	`json:"-"`
 }
@@ -138,6 +139,7 @@ func NewGame(players [4]*shared.Player, targetScore int) *Game {
 		CardsOnTable:       	[]shared.Card{},
 		LedSuit:            	"",
 		LastTrickWinnerIndex: 	-1,
+		LastRoundStartIndex: 	0,
 	}
 }
 
@@ -167,9 +169,10 @@ func (g *Game) StartGameLoop(sender MessageSender) {
 	}
 
 	startPayload := protocol.GameStartPayload{
-		GameID:  g.ID,
-		Players: playerInfos,
-		Teams:   teamInfos,
+		GameID:  	g.ID,
+		Players: 	playerInfos,
+		Teams:   	teamInfos,
+		PointsGoal: g.TargetScore,
 	}
 	startMsg, _ := protocol.NewMessage("game_start", startPayload)
 	g.broadcast(startMsg)
@@ -199,15 +202,15 @@ func (g *Game) startRound() {
 	g.CurrentTrick = shared.NewTrick()
 	g.LedSuit = ""
 
-	// Determine who starts based on the last trick winner, or player 0 if first round
+	// Determine who starts based on the last trick winner or the last round start index
 	if g.LastTrickWinnerIndex != -1 {
 		g.PlayerTurnIndex = g.LastTrickWinnerIndex
 	} else {
-		g.PlayerTurnIndex = 0 // Default starter
+		g.PlayerTurnIndex = g.LastRoundStartIndex
 	}
 
 	// Deal 10 cards to each player
-	hands := g.Deck.Deal(len(g.Players), 10)
+	hands := g.Deck.Deal(len(g.Players), 2)
 	if hands == nil {
 		log.Printf("Error dealing cards in game %s", g.ID)
 		g.GameState = GameOver 
@@ -448,46 +451,50 @@ func (g *Game) endRound() {
 
 	// Update total scores
 	for _, team := range g.Teams {
-		team.AddScore(team.Score)
+		team.TransferScore() // Transfer round score to total score
+		log.Printf("Game %s: Team %d (ID: %s) total score updated to %d from %d.",
+			g.ID, team.TeamNumber, team.ID, team.TotalScore, team.Score)
 	}
 
 	// Broadcast round end info
 	roundEndPayload := protocol.RoundEndPayload{
 		Team1RoundScore: g.Teams[0].Score,
 		Team2RoundScore: g.Teams[1].Score,
-		Team1TotalScore: g.Teams[0].Score,
-		Team2TotalScore: g.Teams[1].Score,
+		Team1TotalScore: g.Teams[0].TotalScore,
+		Team2TotalScore: g.Teams[1].TotalScore,
 	}
 	roundEndMsg, _ := protocol.NewMessage("round_end", roundEndPayload)
 	g.broadcast(roundEndMsg)
 
 	// Check for game over
-	// This is not needed, multiple rounds is not a feature yet
 	gameOver := false
 	var winningTeam *shared.Team
-	scaledTargetScore := g.TargetScore * 3
-	for _, team := range g.Teams {
-		if team.Score >= scaledTargetScore {
-			g.GameState = GameOver
-			gameOver = true
-			winningTeam = team
-			log.Printf("Game %s: Game Over! Team %d (ID: %s) wins.", g.ID, team.TeamNumber, team.ID)
-
-			// Broadcast game over
-			gameOverPayload := protocol.GameOverPayload{
-				WinningTeamID: winningTeam.ID,
-				FinalScoreT1:  g.Teams[0].Score,
-				FinalScoreT2:  g.Teams[1].Score,
-			}
-			gameOverMsg, _ := protocol.NewMessage("game_over", gameOverPayload)
-			g.broadcast(gameOverMsg)
-
-			break
+	if g.Teams[0].TotalScore != g.Teams[1].TotalScore && (g.Teams[0].TotalScore >= g.TargetScore || g.Teams[1].TotalScore >= g.TargetScore) {
+		var team *shared.Team
+		if g.Teams[0].TotalScore > g.Teams[1].TotalScore {
+			team = g.Teams[0]
+		} else {
+			team = g.Teams[1]
 		}
-	}
+		g.GameState = GameOver
+		gameOver = true
+		winningTeam = team
+		log.Printf("Game %s: Game Over! Team %d (ID: %s) wins.", g.ID, team.TeamNumber, team.ID)
 
+		// Broadcast game over
+		gameOverPayload := protocol.GameOverPayload{
+			WinningTeamID: winningTeam.ID,
+			FinalScoreT1:  g.Teams[0].TotalScore,
+			FinalScoreT2:  g.Teams[1].TotalScore,
+		}
+		gameOverMsg, _ := protocol.NewMessage("game_over", gameOverPayload)
+		g.broadcast(gameOverMsg)
+
+	}
 	if !gameOver {
 		log.Printf("Game %s: Preparing for next round.", g.ID)
+		g.LastTrickWinnerIndex = -1
+		g.LastRoundStartIndex = (g.LastRoundStartIndex + 1) % 4
 		g.startRound()
 	} else {
 		log.Printf("Game %s: Final state reached. Winning Team: %d (ID: %s)", g.ID, winningTeam.TeamNumber, winningTeam.ID)
@@ -531,8 +538,8 @@ func (g *Game) HandlePlayerDisconnect(clientID string) {
 
 	gameOverPayload := protocol.GameOverPayload{
 		WinningTeamID: winningTeam.ID,
-		FinalScoreT1:  g.Teams[0].Score,
-		FinalScoreT2:  g.Teams[1].Score,
+		FinalScoreT1:  g.Teams[0].TotalScore,
+		FinalScoreT2:  g.Teams[1].TotalScore,
 	}
 	gameOverMsg, _ := protocol.NewMessage("game_over", gameOverPayload)
 	g.broadcast(gameOverMsg) // Notify remaining players
@@ -613,6 +620,7 @@ func (g *Game) broadcastGameState() {
 	payload := protocol.GameStatePayload{
 		CurrentPlayerID:    currentPlayerID,
 		CardsOnTable:       g.CardsOnTable,
+		// are scored points needed?
 		Team1Score:         team1Score,
 		Team2Score:         team2Score,
 		GameState:          string(g.GameState),

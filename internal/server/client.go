@@ -18,6 +18,7 @@ type Client struct {
 	ID   			string // Unique identifier for the client/player
 	Name 			string // Player's chosen name
 	DesiredTeam 	shared.TeamEnum // Desired team for the player
+	PointsGoal 		int // Points goal for the game
 }
 
 // ReadPump handles incoming messages from the WebSocket connection.

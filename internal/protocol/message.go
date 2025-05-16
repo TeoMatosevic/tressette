@@ -16,6 +16,7 @@ type Message struct {
 type CreateGamePayload struct {
 	Name 		string 				`json:"name"`
 	DesiredTeam shared.TeamEnum 	`json:"desired_team"` // Added desired team
+	PointsGoal 	int 				`json:"points_goal"`   // Added points goal
 }
 
 type JoinGamePayload struct {
@@ -65,9 +66,10 @@ type TeamInfo struct {
 }
 
 type GameStartPayload struct {
-	GameID  string       `json:"game_id"`
-	Players []PlayerInfo `json:"players"`
-	Teams   []TeamInfo   `json:"teams"`
+	GameID  	string       `json:"game_id"`
+	Players 	[]PlayerInfo `json:"players"`
+	Teams   	[]TeamInfo   `json:"teams"`
+	PointsGoal 	int        `json:"points_goal"` // Added points goal
 }
 
 type DealHandPayload struct {

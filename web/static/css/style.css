@@ -59,7 +59,7 @@ body {
 #game-info {
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
     padding: 5px 10px;
     background-color: rgba(0, 0, 0, 0.3);
@@ -68,13 +68,55 @@ body {
     box-sizing: border-box;
 }
 
+#game-info div {
+    width: 100%;
+}
+
 #status-message {
     font-size: 1.1em;
     font-weight: bold;
 }
 
 #scores {
-    font-size: 1.1em;
+    font-size: 1.2em;
+    font-weight: bold;
+    display: flex;
+    flex-direction: row;
+    gap: 10px; /* Space between scores */
+}
+
+#team1-score,
+#team2-score {
+    padding: 5px 10px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#team1-score-total,
+#team2-score-total {
+    padding: 10px;
+    border-radius: 100%;
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent */
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    width: 30px; /* Fixed width for total score */
+    height: 30px; /* Fixed height for total score */
+    display: inline-block;
+}
+
+#points-goal {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: end;
 }
 
 #middle-area {

@@ -199,6 +199,16 @@ func (h *Hub) handleCreateGame(client *Client, msg protocol.Message) {
 		h.sendErrorToClient(client, "Name cannot be empty.")
 		return
 	}
+	if payload.DesiredTeam != 1 && payload.DesiredTeam != 2 {
+		log.Printf("Client %s tried to create game with an invalid desired team: %d", client.ID, payload.DesiredTeam)
+		h.sendErrorToClient(client, "Invalid desired team.")
+		return
+	}
+	if payload.PointsGoal < 1 && payload.PointsGoal > 101 {
+		log.Printf("Client %s tried to create game with an invalid points goal: %d", client.ID, payload.PointsGoal)
+		h.sendErrorToClient(client, "Invalid points goal.")
+		return
+	}
 
 	// Generate unique game code
 	gameCode := h.generateGameCode()
@@ -207,6 +217,7 @@ func (h *Hub) handleCreateGame(client *Client, msg protocol.Message) {
 	h.clientMu.Lock()
 	client.Name = payload.Name
 	client.DesiredTeam = payload.DesiredTeam // Set desired team
+	client.PointsGoal = payload.PointsGoal // Set points goal
 	h.clientToGame[client] = gameCode
 	h.clientMu.Unlock()
 
@@ -287,6 +298,7 @@ func (h *Hub) handleJoinGame(client *Client, msg protocol.Message) {
 	// Add client to lobby
 	client.Name = payload.Name // Set name before adding to lobby list
 	client.DesiredTeam = payload.DesiredTeam // Set desired team
+	client.PointsGoal = -1
 	newLobby := append(lobby, client)
 	h.lobbies[gameCode] = newLobby
 	h.lobbyMu.Unlock() // Unlock lobbyMu after modification
@@ -323,7 +335,13 @@ func (h *Hub) handleJoinGame(client *Client, msg protocol.Message) {
 		}
 
 		// Create and start the game
-		targetScore := 31 // Is this needed?
+		var targetScore int
+		for _, c := range finalLobby {
+			if c != nil && c.PointsGoal > 0 {
+				targetScore = c.PointsGoal // Use the first valid points goal found
+				break
+			}
+		}
 		gamePlayers := convertClientsToGamePlayers(finalLobby) // Use finalLobby slice
 		newGame := game.NewGame(gamePlayers, targetScore) 
 		h.games[gameCode] = newGame // Add to games map using gameCode
