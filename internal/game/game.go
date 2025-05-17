@@ -15,12 +15,13 @@ import (
 type GameState string
 
 const (
-	Waiting   GameState = "Waiting"   // Waiting for players (though Hub manages this mostly)
-	Dealing   GameState = "Dealing"   // Cards are being dealt
-	Playing   GameState = "Playing"   // Players are playing tricks
-	Declaring GameState = "Declaring" // Phase for declaring combinations (optional)
-	RoundOver GameState = "RoundOver" // A round (10 tricks) is finished
-	GameOver  GameState = "GameOver"  // Target score reached
+	Waiting   		GameState 	= "Waiting"   // Waiting for players (though Hub manages this mostly)
+	Dealing   		GameState 	= "Dealing"   // Cards are being dealt
+	Playing   		GameState 	= "Playing"   // Players are playing tricks
+	Declaring 		GameState 	= "Declaring" // Phase for declaring combinations (optional)
+	RoundOver 		GameState 	= "RoundOver" // A round (10 tricks) is finished
+	GameOver  		GameState 	= "GameOver"  // Target score reached
+	CardsPerPlayer 	int			= 10        // Number of cards dealt to each player
 )
 
 // MessageSender defines the function signature for sending messages back to clients.
@@ -210,7 +211,7 @@ func (g *Game) startRound() {
 	}
 
 	// Deal 10 cards to each player
-	hands := g.Deck.Deal(len(g.Players), 2)
+	hands := g.Deck.Deal(len(g.Players), CardsPerPlayer)
 	if hands == nil {
 		log.Printf("Error dealing cards in game %s", g.ID)
 		g.GameState = GameOver 
@@ -299,17 +300,33 @@ func (g *Game) HandlePlayerAction(clientID string, msg protocol.Message) {
 			return
 		}
 
+		if playerIndex != g.PlayerTurnIndex {
+			log.Printf("Game %s: Received declare from %s out of turn (current: %d)", g.ID, clientID, g.PlayerTurnIndex)
+			g.sendErrorToPlayer(clientID, "Not your turn.")
+			return
+		}
+
+		// Check if the player had not yet played a card in this game
+		// He must have as much cards in his hand as the number that were dealt
+		for _, player := range g.Players {
+			if player != nil && player.ID == clientID {
+				if len(player.Hand) != CardsPerPlayer {
+					log.Printf("Game %s: Player %s tried to declare but has %d cards in hand.", g.ID, clientID, len(player.Hand))
+					g.sendErrorToPlayer(clientID, "Invalid declaration: must have the same number of cards as dealt.")
+					return
+				}
+				break
+			}
+		}
+
 		var payload protocol.DeclarePayload
 		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
 			log.Printf("Game %s: Error unmarshalling declare payload from %s: %v", g.ID, clientID, err)
 			g.sendErrorToPlayer(clientID, "Invalid declare message.")
 			return
 		}
-		log.Printf("Game %s: Received 'declare' (%s) from %s - Placeholder", g.ID, payload.DeclarationType, clientID)
-
-		g.sendErrorToPlayer(clientID, "Declarations not implemented yet.")
-
-		// TODO: Implement declaration logic here
+		
+		g.handleDeclaration(clientID, payload)
 
 	default:
 		log.Printf("Game %s: Received unhandled action type '%s' from %s", g.ID, msg.Type, clientID)
@@ -547,6 +564,33 @@ func (g *Game) HandlePlayerDisconnect(clientID string) {
 	// TODO: Signal Hub to clean up this game instance? Or Hub handles based on state?
 	// Consider saving winningTeam.TeamNumber (1 or 2) to DB instead of UUID
 	log.Printf("Game %s: Game ended due to player %s disconnect. Team %d (ID: %s) wins by forfeit.", g.ID, clientID, winningTeam.TeamNumber, winningTeam.ID)
+}
+
+func (g *Game) handleDeclaration(playerId string, declaration protocol.DeclarePayload) {
+	d := declaration.ToDeclaration()
+
+	for _, player := range g.Players {
+		if player != nil && player.ID == playerId {
+			result := player.AddDeclaration(d)
+			if !result.Success {
+				log.Printf("Game %s: Player %s failed to add declaration: %v", g.ID, playerId, d)
+				g.sendErrorToPlayer(playerId, "Invalid declaration.")
+				return
+			} else {
+				for _, team := range g.Teams {
+					for _, p := range team.Players {
+						if p != nil && p.ID == player.ID {
+							team.AddScore(result.Points)
+							log.Printf("Game %s: Player %s declared %s. Team %d (ID: %s) score updated to %d.",
+								g.ID, playerId, d, team.TeamNumber, team.ID, team.Score)
+							break
+						}
+					}
+				}
+			}
+			break
+		}
+	}
 }
 
 

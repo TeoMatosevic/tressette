@@ -10,6 +10,7 @@ let afterTrick = false // Flag to indicate if the trick has ended
 let roundOver = false // Flag to indicate if the round has ended
 let roundOverPayload = null // Store the payload for round over
 let gameOver = false // Flag to indicate if the game is over
+let canDeclare = false // Flag to indicate if the player can declare
 
 // DOM Elements
 const statusMessage = document.getElementById("status-message")
@@ -23,6 +24,7 @@ const myPlayerNameSpan = document.getElementById("my-player-name")
 const teamToggle = document.getElementById("team-toggle")
 const pointsGoal = document.getElementById("points-goal-input")
 const pointsGoalDisplay = document.getElementById("points-goal")
+const declarationArea = document.getElementById("declaration-area")
 
 // New UI Elements
 const initialSection = document.getElementById("initial-section")
@@ -275,6 +277,7 @@ function handleGameStart(payload) {
     }
     setupOpponentNames(payload.players, payload.teams)
     pointsGoalDisplay.textContent = `Points Goal: ${payload.points_goal}`
+    canDeclare = true
     resetScores()
 }
 
@@ -307,6 +310,7 @@ function handleGameState(payload) {
 
 function handlePlayerPlayedCard(payload) {
     if (payload.player_id === myPlayerId) {
+        canDeclare = false // Disable declaration after playing a card
         removeCardFromHand(payload.card)
         removeHighlightedCards() // Remove highlight from all cards
     }

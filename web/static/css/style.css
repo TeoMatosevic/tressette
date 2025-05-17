@@ -175,7 +175,14 @@ body {
     justify-content: center;
 } /* Center vertically */
 #player-bottom {
+    position: relative;
     width: 100%;
+}
+
+#declaration-area {
+    position: absolute;
+    bottom: 0;
+    right: 0;
 }
 
 .player-name {

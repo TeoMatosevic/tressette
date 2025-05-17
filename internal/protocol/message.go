@@ -5,6 +5,13 @@ import (
 	"tressette-game/internal/shared"
 )
 
+type DeclareType string
+
+const (
+	DeclareNapola 				DeclareType = "napola" // Declare Napola
+	DeclareThreeOrFourOfKind 	DeclareType = "three_or_four_of_kind" // Declare Three or Four of a Kind
+)
+
 // Message represents a generic WebSocket message structure.
 type Message struct {
 	Type    string          `json:"type"`              // Type of the message (e.g., "join_game", "play_card")
@@ -31,7 +38,9 @@ type PlayCardPayload struct {
 }
 
 type DeclarePayload struct {
-	DeclarationType string `json:"declaration_type"`
+	DeclarationType DeclareType `json:"declaration_type"`
+	Suit 		 	shared.Suit `json:"suit"`
+	Rank 		 	string      `json:"rank"`
 }
 
 // --- Server -> Client Payload Structs ---
@@ -105,12 +114,6 @@ type RoundEndPayload struct {
 	Team2TotalScore   int `json:"team2_total_score"` 
 }
 
-type DeclarationInfoPayload struct {
-	PlayerID        string `json:"player_id"`
-	DeclarationType string `json:"declaration_type"`
-	Points          int    `json:"points"`
-}
-
 type GameOverPayload struct {
 	WinningTeamID string `json:"winning_team_id"` 
 	FinalScoreT1  int    `json:"final_score_t1"` 
@@ -128,6 +131,14 @@ type PlayerLeftPayload struct {
 type PlayerPlayedCardPayload struct {
 	PlayerID string        	`json:"player_id"`
 	Card     shared.Card 	`json:"card"` 
+}
+
+func (d *DeclarePayload) ToDeclaration() shared.Declaration {
+	return shared.Declaration{
+		Type: string(d.DeclarationType),
+		Suit: d.Suit,
+		Rank: d.Rank,
+	}
 }
 
 // Helper function to create a JSON message
