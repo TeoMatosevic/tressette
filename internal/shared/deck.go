@@ -2,8 +2,7 @@ package shared
 
 import (
 	"log"
-	"math/rand"
-	"time"
+	"math/rand/v2"
 )
 
 // Deck represents a collection of cards.
@@ -41,8 +40,7 @@ func NewDeck() *Deck {
 
 // Shuffle randomizes the order of cards in the deck.
 func (d *Deck) Shuffle() {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	r.Shuffle(len(d.Cards), func(i, j int) {
+	rand.Shuffle(len(d.Cards), func(i, j int) {
 		d.Cards[i], d.Cards[j] = d.Cards[j], d.Cards[i]
 	})
 	log.Println("Deck shuffled.")
@@ -53,7 +51,7 @@ func (d *Deck) Deal(numPlayers, cardsPerPlayer int) [][]Card {
 	totalCardsNeeded := numPlayers * cardsPerPlayer
 	if len(d.Cards) < totalCardsNeeded {
 		log.Printf("Error: Not enough cards in deck (%d) to deal %d cards to %d players.", len(d.Cards), cardsPerPlayer, numPlayers)
-		return nil 
+		return nil
 	}
 
 	dealt := make([][]Card, numPlayers)
@@ -71,3 +69,4 @@ func (d *Deck) Deal(numPlayers, cardsPerPlayer int) [][]Card {
 	log.Printf("Dealt %d cards to %d players.", cardsPerPlayer, numPlayers)
 	return dealt
 }
+
