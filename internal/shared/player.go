@@ -1,6 +1,8 @@
 package shared
 
-import "log"
+import (
+	"log"
+)
 
 type Declaration struct {
 	Type string `json:"type"` // Type of declaration (e.g., "napola", "three_or_four_of_kind")
@@ -9,8 +11,8 @@ type Declaration struct {
 }
 
 type DeclarationResult struct {
-	Success bool   	`json:"success"` // Indicates if the declaration was successful
-	Points 	int 	`json:"points"` // Points awarded for the declaration
+	Success bool `json:"success"` // Indicates if the declaration was successful
+	Points  int  `json:"points"`  // Points awarded for the declaration
 }
 
 // Player represents a player in the Tressette game.

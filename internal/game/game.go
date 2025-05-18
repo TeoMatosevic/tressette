@@ -15,13 +15,13 @@ import (
 type GameState string
 
 const (
-	Waiting   		GameState 	= "Waiting"   // Waiting for players (though Hub manages this mostly)
-	Dealing   		GameState 	= "Dealing"   // Cards are being dealt
-	Playing   		GameState 	= "Playing"   // Players are playing tricks
-	Declaring 		GameState 	= "Declaring" // Phase for declaring combinations (optional)
-	RoundOver 		GameState 	= "RoundOver" // A round (10 tricks) is finished
-	GameOver  		GameState 	= "GameOver"  // Target score reached
-	CardsPerPlayer 	int			= 10        // Number of cards dealt to each player
+	Waiting        GameState = "Waiting"   // Waiting for players (though Hub manages this mostly)
+	Dealing        GameState = "Dealing"   // Cards are being dealt
+	Playing        GameState = "Playing"   // Players are playing tricks
+	Declaring      GameState = "Declaring" // Phase for declaring combinations (optional)
+	RoundOver      GameState = "RoundOver" // A round (10 tricks) is finished
+	GameOver       GameState = "GameOver"  // Target score reached
+	CardsPerPlayer int       = 10          // Number of cards dealt to each player
 )
 
 // MessageSender defines the function signature for sending messages back to clients.
@@ -30,20 +30,20 @@ type MessageSender func(clientID string, message []byte)
 
 // Game represents the main game state machine.
 type Game struct {
-	ID                 		string           	`json:"id"`
-	Players            		[4]*shared.Player 	`json:"-"`
-	Teams              		[2]*shared.Team   	`json:"-"`
-	Deck               		*shared.Deck      	`json:"-"`
-	CurrentTrick       		*shared.Trick     	`json:"-"` 
-	PlayerTurnIndex    		int              	`json:"player_turn_index"`
-	GameState          		GameState        	`json:"game_state"`
-	TargetScore        		int              	`json:"-"` 
-	CardsOnTable       		[]shared.Card     	`json:"cards_on_table"`
-	LedSuit            		shared.Suit       	`json:"led_suit"` 
-	LastTrickWinnerIndex 	int              	`json:"last_trick_winner_index"`
-	LastRoundStartIndex		int              	`json:"last_round_start_index"`
-	mu                 		sync.Mutex       
-	sendMessage        		MessageSender    	`json:"-"`
+	ID                   string            `json:"id"`
+	Players              [4]*shared.Player `json:"-"`
+	Teams                [2]*shared.Team   `json:"-"`
+	Deck                 *shared.Deck      `json:"-"`
+	CurrentTrick         *shared.Trick     `json:"-"`
+	PlayerTurnIndex      int               `json:"player_turn_index"`
+	GameState            GameState         `json:"game_state"`
+	TargetScore          int               `json:"-"`
+	CardsOnTable         []shared.Card     `json:"cards_on_table"`
+	LedSuit              shared.Suit       `json:"led_suit"`
+	LastTrickWinnerIndex int               `json:"last_trick_winner_index"`
+	LastRoundStartIndex  int               `json:"last_round_start_index"`
+	mu                   sync.Mutex
+	sendMessage          MessageSender `json:"-"`
 }
 
 // NewGame initializes a new game instance.
@@ -120,7 +120,7 @@ func NewGame(players [4]*shared.Player, targetScore int) *Game {
 		third = players[3]
 	}
 
-	teams[0] = shared.NewTeam(1, first, third) // Team 1 (Red)
+	teams[0] = shared.NewTeam(1, first, third)   // Team 1 (Red)
 	teams[1] = shared.NewTeam(2, second, fourth) // Team 2 (Blue)
 	newPlayers[0] = first
 	newPlayers[1] = second
@@ -129,18 +129,18 @@ func NewGame(players [4]*shared.Player, targetScore int) *Game {
 	gameID := uuid.New().String()
 
 	return &Game{
-		ID:                 	gameID,
-		Players:            	newPlayers,
-		Teams:              	teams,
-		Deck:               	shared.NewDeck(),
-		CurrentTrick:       	shared.NewTrick(),
-		PlayerTurnIndex:    	0,
-		GameState:          	Dealing, // Initial state is Dealing
-		TargetScore:        	targetScore,
-		CardsOnTable:       	[]shared.Card{},
-		LedSuit:            	"",
-		LastTrickWinnerIndex: 	-1,
-		LastRoundStartIndex: 	0,
+		ID:                   gameID,
+		Players:              newPlayers,
+		Teams:                teams,
+		Deck:                 shared.NewDeck(),
+		CurrentTrick:         shared.NewTrick(),
+		PlayerTurnIndex:      0,
+		GameState:            Dealing, // Initial state is Dealing
+		TargetScore:          targetScore,
+		CardsOnTable:         []shared.Card{},
+		LedSuit:              "",
+		LastTrickWinnerIndex: -1,
+		LastRoundStartIndex:  0,
 	}
 }
 
@@ -156,7 +156,7 @@ func (g *Game) StartGameLoop(sender MessageSender) {
 	for i, p := range g.Players {
 		playerInfos[i] = protocol.PlayerInfo{ID: p.ID, Name: p.Name, Position: i}
 	}
-	teamInfos := make([]protocol.TeamInfo, 2) 
+	teamInfos := make([]protocol.TeamInfo, 2)
 	for i, t := range g.Teams {
 		teamInfos[i] = protocol.TeamInfo{
 			ID: t.ID,
@@ -164,15 +164,15 @@ func (g *Game) StartGameLoop(sender MessageSender) {
 				{ID: t.Players[0].ID, Name: t.Players[0].Name, Position: i * 2},
 				{ID: t.Players[1].ID, Name: t.Players[1].Name, Position: i*2 + 1},
 			},
-			Score: t.Score,
+			Score:      t.Score,
 			TeamNumber: t.TeamNumber,
 		}
 	}
 
 	startPayload := protocol.GameStartPayload{
-		GameID:  	g.ID,
-		Players: 	playerInfos,
-		Teams:   	teamInfos,
+		GameID:     g.ID,
+		Players:    playerInfos,
+		Teams:      teamInfos,
 		PointsGoal: g.TargetScore,
 	}
 	startMsg, _ := protocol.NewMessage("game_start", startPayload)
@@ -180,7 +180,7 @@ func (g *Game) StartGameLoop(sender MessageSender) {
 
 	// 2. Start the first round
 	g.startRound() // This will deal cards and send initial turn messages
-	g.mu.Unlock() // Unlock after initial setup
+	g.mu.Unlock()  // Unlock after initial setup
 }
 
 // startRound begins a new round (shuffling, dealing, setting state).
@@ -197,9 +197,9 @@ func (g *Game) startRound() {
 	for _, team := range g.Teams {
 		team.ResetScore()
 	}
-	g.Deck = shared.NewDeck() 
+	g.Deck = shared.NewDeck()
 	g.Deck.Shuffle()
-	g.CardsOnTable = []shared.Card{} 
+	g.CardsOnTable = []shared.Card{}
 	g.CurrentTrick = shared.NewTrick()
 	g.LedSuit = ""
 
@@ -214,16 +214,16 @@ func (g *Game) startRound() {
 	hands := g.Deck.Deal(len(g.Players), CardsPerPlayer)
 	if hands == nil {
 		log.Printf("Error dealing cards in game %s", g.ID)
-		g.GameState = GameOver 
-		g.broadcastError("Internal server error during dealing.") 
+		g.GameState = GameOver
+		g.broadcastError("Internal server error during dealing.")
 		return
 	}
 	for i, hand := range hands {
 		if g.Players[i] != nil {
-			g.Players[i].Hand = hand 
+			g.Players[i].Hand = hand
 			// Send hand to the specific player
-			dealPayload := protocol.DealHandPayload{Hand: hand} 
-			dealMsg, _ := protocol.NewMessage("deal_hand", dealPayload) 
+			dealPayload := protocol.DealHandPayload{Hand: hand}
+			dealMsg, _ := protocol.NewMessage("deal_hand", dealPayload)
 			g.sendToPlayer(g.Players[i].ID, dealMsg)
 		} else {
 			log.Printf("Error: Player %d is nil in game %s during dealing", i, g.ID)
@@ -241,9 +241,8 @@ func (g *Game) startRound() {
 	g.notifyCurrentPlayerTurn()
 }
 
-
 // HandlePlayerAction processes incoming actions from a player.
-func (g *Game) HandlePlayerAction(clientID string, msg protocol.Message) { 
+func (g *Game) HandlePlayerAction(clientID string, msg protocol.Message) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -325,7 +324,7 @@ func (g *Game) HandlePlayerAction(clientID string, msg protocol.Message) {
 			g.sendErrorToPlayer(clientID, "Invalid declare message.")
 			return
 		}
-		
+
 		g.handleDeclaration(clientID, payload)
 
 	default:
@@ -345,7 +344,7 @@ func (g *Game) playCard(playerIndex int, card shared.Card) bool {
 	}
 
 	// Remove card from hand
-	if !player.RemoveCard(card) { 
+	if !player.RemoveCard(card) {
 		// this should not happen if the game state is correct
 		log.Printf("Error: Failed to remove card %s %s from player %d's hand unexpectedly.", card.Rank, card.Suit, playerIndex)
 		g.broadcastError("Internal server error: Hand inconsistency.")
@@ -367,14 +366,14 @@ func (g *Game) playCard(playerIndex int, card shared.Card) bool {
 	if len(g.CurrentTrick.Cards) == len(g.Players) {
 		g.broadcastGameState()
 		defer g.endTrick() // Handles scoring, next turn/round logic
-		} else {
-			// Advance turn to the next player
-			g.PlayerTurnIndex = (g.PlayerTurnIndex + 1) % len(g.Players)
-			log.Printf("Game %s: Turn advanced to player %d (%s)", g.ID, g.PlayerTurnIndex, g.Players[g.PlayerTurnIndex].Name)
-			g.broadcastGameState()
-			defer g.notifyCurrentPlayerTurn()
-		}
-		
+	} else {
+		// Advance turn to the next player
+		g.PlayerTurnIndex = (g.PlayerTurnIndex + 1) % len(g.Players)
+		log.Printf("Game %s: Turn advanced to player %d (%s)", g.ID, g.PlayerTurnIndex, g.Players[g.PlayerTurnIndex].Name)
+		g.broadcastGameState()
+		defer g.notifyCurrentPlayerTurn()
+	}
+
 	return true
 }
 
@@ -424,10 +423,10 @@ func (g *Game) endTrick() {
 
 	// Broadcast trick end info
 	trickEndPayload := protocol.TrickEndPayload{
-		Winner: 	card,
-		WinnerID: 	winningPlayer.ID,
-		Cards:    	trickCardInfos,
-		Points:   	trickPoints,    // Scaled points won
+		Winner:   card,
+		WinnerID: winningPlayer.ID,
+		Cards:    trickCardInfos,
+		Points:   trickPoints, // Scaled points won
 	}
 	trickEndMsg, _ := protocol.NewMessage("trick_end", trickEndPayload)
 	g.broadcast(trickEndMsg)
@@ -518,7 +517,6 @@ func (g *Game) endRound() {
 	}
 }
 
-
 // HandlePlayerDisconnect handles a player leaving mid-game.
 func (g *Game) HandlePlayerDisconnect(clientID string) {
 	g.mu.Lock()
@@ -580,9 +578,17 @@ func (g *Game) handleDeclaration(playerId string, declaration protocol.DeclarePa
 				for _, team := range g.Teams {
 					for _, p := range team.Players {
 						if p != nil && p.ID == player.ID {
-							team.AddScore(result.Points)
+							team.AddScore(result.Points * 3) // Scale points
 							log.Printf("Game %s: Player %s declared %s. Team %d (ID: %s) score updated to %d.",
 								g.ID, playerId, d, team.TeamNumber, team.ID, team.Score)
+							// Broadcast declaration
+							declarationPayload := protocol.DeclarationConfirmationPayload{
+								TeamID: team.ID,
+								Points: result.Points * 3, // Scale points
+							}
+							declarationMsg, _ := protocol.NewMessage("declaration_confirmation", declarationPayload)
+							g.broadcast(declarationMsg)
+
 							break
 						}
 					}
@@ -592,7 +598,6 @@ func (g *Game) handleDeclaration(playerId string, declaration protocol.DeclarePa
 		}
 	}
 }
-
 
 // --- Messaging Helpers (Assume lock is held or called safely) ---
 
@@ -640,7 +645,6 @@ func (g *Game) broadcastError(errorMsg string) {
 	g.broadcast(msgBytes)
 }
 
-
 // broadcastGameState sends the current game state to all players.
 func (g *Game) broadcastGameState() {
 	// Create payload (ensure sensitive info like full hands isn't sent)
@@ -660,14 +664,13 @@ func (g *Game) broadcastGameState() {
 		team2Score = g.Teams[1].Score
 	}
 
-
 	payload := protocol.GameStatePayload{
-		CurrentPlayerID:    currentPlayerID,
-		CardsOnTable:       g.CardsOnTable,
+		CurrentPlayerID: currentPlayerID,
+		CardsOnTable:    g.CardsOnTable,
 		// are scored points needed?
-		Team1Score:         team1Score,
-		Team2Score:         team2Score,
-		GameState:          string(g.GameState),
+		Team1Score: team1Score,
+		Team2Score: team2Score,
+		GameState:  string(g.GameState),
 	}
 	msgBytes, _ := protocol.NewMessage("game_state_update", payload)
 	g.broadcast(msgBytes)
@@ -717,3 +720,4 @@ func (g *Game) GetPlayerIndex(playerID string) int {
 	}
 	return -1 // Not found
 }
+

@@ -8,8 +8,8 @@ import (
 type DeclareType string
 
 const (
-	DeclareNapola 				DeclareType = "napola" // Declare Napola
-	DeclareThreeOrFourOfKind 	DeclareType = "three_or_four_of_kind" // Declare Three or Four of a Kind
+	DeclareNapola            DeclareType = "napola"                // Declare Napola
+	DeclareThreeOrFourOfKind DeclareType = "three_or_four_of_kind" // Declare Three or Four of a Kind
 )
 
 // Message represents a generic WebSocket message structure.
@@ -21,15 +21,15 @@ type Message struct {
 // --- Client -> Server Payload Structs ---
 
 type CreateGamePayload struct {
-	Name 		string 				`json:"name"`
-	DesiredTeam shared.TeamEnum 	`json:"desired_team"` // Added desired team
-	PointsGoal 	int 				`json:"points_goal"`   // Added points goal
+	Name        string          `json:"name"`
+	DesiredTeam shared.TeamEnum `json:"desired_team"` // Added desired team
+	PointsGoal  int             `json:"points_goal"`  // Added points goal
 }
 
 type JoinGamePayload struct {
-	Name     	string 				`json:"name"`
-	GameCode 	string 				`json:"game_code"` // Added game code
-	DesiredTeam shared.TeamEnum 	`json:"desired_team"` // Added desired team
+	Name        string          `json:"name"`
+	GameCode    string          `json:"game_code"`    // Added game code
+	DesiredTeam shared.TeamEnum `json:"desired_team"` // Added desired team
 }
 
 type PlayCardPayload struct {
@@ -39,8 +39,13 @@ type PlayCardPayload struct {
 
 type DeclarePayload struct {
 	DeclarationType DeclareType `json:"declaration_type"`
-	Suit 		 	shared.Suit `json:"suit"`
-	Rank 		 	string      `json:"rank"`
+	Suit            shared.Suit `json:"suit"`
+	Rank            string      `json:"rank"`
+}
+
+type DeclarationConfirmationPayload struct {
+	TeamID string `json:"team_id"` // ID of the team making the declaration
+	Points int    `json:"points"`  // Points awarded for the declaration
 }
 
 // --- Server -> Client Payload Structs ---
@@ -62,9 +67,9 @@ type GameWaitPayload struct {
 }
 
 type PlayerInfo struct {
-	ID   		string `json:"id"`
-	Name 		string `json:"name"`
-	Position 	int    `json:"position"` // Player's position in the game (0-3)
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Position int    `json:"position"` // Player's position in the game (0-3)
 }
 
 type TeamInfo struct {
@@ -75,10 +80,10 @@ type TeamInfo struct {
 }
 
 type GameStartPayload struct {
-	GameID  	string       `json:"game_id"`
-	Players 	[]PlayerInfo `json:"players"`
-	Teams   	[]TeamInfo   `json:"teams"`
-	PointsGoal 	int        `json:"points_goal"` // Added points goal
+	GameID     string       `json:"game_id"`
+	Players    []PlayerInfo `json:"players"`
+	Teams      []TeamInfo   `json:"teams"`
+	PointsGoal int          `json:"points_goal"` // Added points goal
 }
 
 type DealHandPayload struct {
@@ -91,33 +96,33 @@ type YourTurnPayload struct {
 }
 
 type GameStatePayload struct {
-	CurrentPlayerID    	string        `json:"current_player_id"`
-	CardsOnTable       	[]shared.Card `json:"cards_on_table"`
-	Team1Score         	int           `json:"team1_score"`  
-	Team2Score         	int           `json:"team2_score"` 
-	LastTrick          	[]shared.Card `json:"last_trick,omitempty"`
-	LastTrickWinnerID 	string        `json:"last_winner_id,omitempty"`
-	GameState          	string        `json:"game_state"`
+	CurrentPlayerID   string        `json:"current_player_id"`
+	CardsOnTable      []shared.Card `json:"cards_on_table"`
+	Team1Score        int           `json:"team1_score"`
+	Team2Score        int           `json:"team2_score"`
+	LastTrick         []shared.Card `json:"last_trick,omitempty"`
+	LastTrickWinnerID string        `json:"last_winner_id,omitempty"`
+	GameState         string        `json:"game_state"`
 }
 
 type TrickEndPayload struct {
-	Winner		shared.PlayedCard	`json:"winner"`
-	WinnerID	string				`json:"winner_id"`
-	Cards    	[]shared.Card 		`json:"cards"`    
-	Points   	int           		`json:"points"`   
+	Winner   shared.PlayedCard `json:"winner"`
+	WinnerID string            `json:"winner_id"`
+	Cards    []shared.Card     `json:"cards"`
+	Points   int               `json:"points"`
 }
 
 type RoundEndPayload struct {
-	Team1RoundScore   int `json:"team1_round_score"` 
-	Team2RoundScore   int `json:"team2_round_score"` 
-	Team1TotalScore   int `json:"team1_total_score"` 
-	Team2TotalScore   int `json:"team2_total_score"` 
+	Team1RoundScore int `json:"team1_round_score"`
+	Team2RoundScore int `json:"team2_round_score"`
+	Team1TotalScore int `json:"team1_total_score"`
+	Team2TotalScore int `json:"team2_total_score"`
 }
 
 type GameOverPayload struct {
-	WinningTeamID string `json:"winning_team_id"` 
-	FinalScoreT1  int    `json:"final_score_t1"` 
-	FinalScoreT2  int    `json:"final_score_t2"` 
+	WinningTeamID string `json:"winning_team_id"`
+	FinalScoreT1  int    `json:"final_score_t1"`
+	FinalScoreT2  int    `json:"final_score_t2"`
 }
 
 type ErrorPayload struct {
@@ -129,8 +134,8 @@ type PlayerLeftPayload struct {
 }
 
 type PlayerPlayedCardPayload struct {
-	PlayerID string        	`json:"player_id"`
-	Card     shared.Card 	`json:"card"` 
+	PlayerID string      `json:"player_id"`
+	Card     shared.Card `json:"card"`
 }
 
 func (d *DeclarePayload) ToDeclaration() shared.Declaration {

@@ -12,6 +12,44 @@ let roundOverPayload = null // Store the payload for round over
 let gameOver = false // Flag to indicate if the game is over
 let canDeclare = false // Flag to indicate if the player can declare
 
+let declarations = [{
+    type: "napola",
+    suit: "Bastoni",
+    rank: "",
+    image: "images/cards/Bastoni_1.png",
+}, {
+    type: "napola",
+    suit: "Kope",
+    rank: "",
+    image: "images/cards/Kope_1.png",
+}, {
+    type: "napola",
+    suit: "Denari",
+    rank: "",
+    image: "images/cards/Denari_1.png",
+}, {
+    type: "napola",
+    suit: "Spade",
+    rank: "",
+    image: "images/cards/Spade_1.png",
+}, {
+    type: "three_or_four_of_kind",
+    suit: "",
+    rank: "1",
+    image: "images/cards/Bastoni_1.png",
+}, {
+    type: "three_or_four_of_kind",
+    suit: "",
+    rank: "2",
+    image: "images/cards/Bastoni_2.png",
+}, {
+    type: "three_or_four_of_kind",
+    suit: "",
+    rank: "3",
+    image: "images/cards/Bastoni_3.png",
+}]
+
+
 // DOM Elements
 const statusMessage = document.getElementById("status-message")
 const playerHandDiv = document.getElementById("player-hand")
@@ -24,7 +62,12 @@ const myPlayerNameSpan = document.getElementById("my-player-name")
 const teamToggle = document.getElementById("team-toggle")
 const pointsGoal = document.getElementById("points-goal-input")
 const pointsGoalDisplay = document.getElementById("points-goal")
-const declarationArea = document.getElementById("declaration-area")
+const declarationArea = document.getElementById("declaration-button-area")
+const declarationsSection = document.getElementById("declarations-section")
+
+declarationsSection.addEventListener("click", (event) => {
+    declarationsSection.style.display = "none" // Hide the declaration area
+})
 
 // New UI Elements
 const initialSection = document.getElementById("initial-section")
@@ -219,6 +262,9 @@ function handleMessage(message) {
         case "game_over":
             handleGameOver(message.payload)
             break
+        case "declaration_confirmation":
+            updateScoresAfterDeclarationConfirmation(message.payload)
+            break
         case "error":
             handleGenericError(message.payload)
             break
@@ -290,6 +336,7 @@ function handleDealHand(payload) {
 function handleYourTurn() {
     statusMessage.textContent = "Your turn!"
     highlightPlayableCards()
+    renderDeclarations()
 }
 
 function handleGameState(payload) {
@@ -313,6 +360,7 @@ function handlePlayerPlayedCard(payload) {
         canDeclare = false // Disable declaration after playing a card
         removeCardFromHand(payload.card)
         removeHighlightedCards() // Remove highlight from all cards
+        renderDeclarations() // Update declarations section
     }
 }
 
@@ -450,6 +498,58 @@ function clearTrickDisplay() {
     // }
 }
 
+function renderDeclarations() {
+    if (canDeclare) {
+        const declareButton = document.createElement("button")
+        const napolaDeclarations = document.createElement("div")
+        const napolaDeclarationsTitle = document.createElement("h3")
+        const threeFourOfAKindDeclarations = document.createElement("div")
+        const threeFourOfAKindDeclarationsTitle = document.createElement("h3")
+        declareButton.textContent = "Declare"
+        declareButton.classList.add("declare-button")
+        napolaDeclarations.classList.add("declarations-section-inner")
+        threeFourOfAKindDeclarations.classList.add("declarations-section-inner")
+        napolaDeclarationsTitle.textContent = "Napola Declarations"
+        threeFourOfAKindDeclarationsTitle.textContent = "Three or Four of a Kind Declarations"
+        declarations.forEach((declaration) => {
+            const declarationElement = document.createElement("img")
+            const type = declaration.type
+            let suit = ""
+            let rank = ""
+            declarationElement.classList.add("card")
+            declarationElement.style.cursor = "pointer"
+            declarationElement.src = declaration.image
+            if (declaration.type === "napola") {
+                suit = declaration.suit
+                napolaDeclarations.appendChild(declarationElement)
+            } else if (declaration.type === "three_or_four_of_kind") {
+                rank = declaration.rank
+                threeFourOfAKindDeclarations.appendChild(declarationElement)
+            }
+
+            declarationElement.addEventListener("click", () => {
+                sendMessage("declare", { declaration_type: type, suit: suit, rank: rank })
+            })
+        })
+        declarationsSection.appendChild(napolaDeclarationsTitle)
+        declarationsSection.appendChild(napolaDeclarations)
+        declarationsSection.appendChild(threeFourOfAKindDeclarationsTitle)
+        declarationsSection.appendChild(threeFourOfAKindDeclarations)
+
+        declareButton.addEventListener("click", () => {
+            // declarationsSection has display: none; so we need to show it
+            declarationsSection.style.display = "block"
+        })
+        declarationArea.appendChild(declareButton)
+    } else {
+        const declareButton = document.querySelector(".declare-button")
+        if (declareButton) {
+            declareButton.remove() // Remove the button if it exists
+        }
+        declarationsSection.style.display = "none" // Hide the declaration area
+    }
+}
+
 function removeCardFromHand(cardToRemove) {
     const cardId = `${cardToRemove.Suit}-${cardToRemove.Rank}`
     const cardElement = playerHandDiv.querySelector(`[data-card-id="${cardId}"]`)
@@ -525,6 +625,22 @@ function updateScoresAfterTrick(playerId, points) {
     teamsInfo.forEach((team) => {
         if (team.players.some((p) => p.id === playerId)) {
             team.score += points // Add points to the winning team
+            if (team.team_number === 1) {
+                const team1Score = team.score % 3 === 0 ? `${team.score / 3}` : `${team.score} / 3`
+                team1ScoreCurrentRoundSpan.textContent = `${team1Score}`
+            } else if (team.team_number === 2) {
+                const team2Score = team.score % 3 === 0 ? `${team.score / 3}` : `${team.score} / 3`
+                team2ScoreCurrentRoundSpan.textContent = `${team2Score}`
+            }
+        }
+    })
+}
+
+function updateScoresAfterDeclarationConfirmation(payload) {
+    // Update scores based on declaration confirmation
+    teamsInfo.forEach((team) => {
+        if (team.id === payload.team_id) {
+            team.score += payload.points // Add points to the winning team
             if (team.team_number === 1) {
                 const team1Score = team.score % 3 === 0 ? `${team.score / 3}` : `${team.score} / 3`
                 team1ScoreCurrentRoundSpan.textContent = `${team1Score}`
