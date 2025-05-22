@@ -11,8 +11,9 @@ type Declaration struct {
 }
 
 type DeclarationResult struct {
-	Success bool `json:"success"` // Indicates if the declaration was successful
-	Points  int  `json:"points"`  // Points awarded for the declaration
+	Success     bool `json:"success"`      // Indicates if the declaration was successful
+	Points      int  `json:"points"`       // Points awarded for the declaration
+	WithoutSuit Suit `json:"without_suit"` // Suit of the card involved in the declaration
 }
 
 // Player represents a player in the Tressette game.
@@ -91,10 +92,22 @@ func (p *Player) AddDeclaration(declaration Declaration) DeclarationResult {
 		p.Declarations = append(p.Declarations, declaration)
 		return DeclarationResult{Success: true, Points: num_of_cards} // Points for napola
 	case "three_or_four_of_kind":
+		if declaration.Rank != "1" && declaration.Rank != "2" && declaration.Rank != "3" {
+			log.Printf("Invalid three_or_four_of_kind declaration: rank %s is not valid.", declaration.Rank)
+			return DeclarationResult{Success: false, Points: 0}
+		}
 		num_of_cards := 0
+		suits := map[Suit]bool{
+			Denari:  false,
+			Spade:   false,
+			Bastoni: false,
+			Kope:    false,
+		}
+
 		for _, c := range p.Hand {
 			if c.Rank == declaration.Rank {
 				num_of_cards++
+				suits[c.Suit] = true
 			}
 		}
 		if num_of_cards != 3 && num_of_cards != 4 {
@@ -107,8 +120,19 @@ func (p *Player) AddDeclaration(declaration Declaration) DeclarationResult {
 				return DeclarationResult{Success: false, Points: 0}
 			}
 		}
+		var without_suit Suit
+		// find mising suit
+		if num_of_cards == 3 {
+			for suit, found := range suits {
+				if !found {
+					without_suit = suit
+					break
+				}
+			}
+		}
+
 		p.Declarations = append(p.Declarations, declaration)
-		return DeclarationResult{Success: true, Points: num_of_cards} // Points for three or four of a kind
+		return DeclarationResult{Success: true, Points: num_of_cards, WithoutSuit: without_suit} // Points for three_or_four_of_kind
 	default:
 		log.Panicf("Invalid declaration type: %s", declaration.Type)
 		return DeclarationResult{Success: false, Points: 0} // Invalid declaration

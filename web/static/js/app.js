@@ -50,6 +50,31 @@ let declarations = [{
 }]
 
 
+const rules_text = `<h2>Rules</h2>
+    <p>Tressette is a traditionl Italian and Istrian card game played with a 40-card deck. 
+    The game is played by four players in two teams of two players each.</p>
+    <p>The objective of the game is to score points by winning tricks and declaring special combinations of cards.</p>
+    <p>Each player is dealt 10 cards. Cards are divided into four suits: Bastoni, Kope, Denari, and Spade. </p>
+    <p>The strongest card in each suit is 3, followed by 2, 1, 13, 12, 11, 7, 6, 5, and 4.</p>
+    <p>Ace or 1 is the card that values the most (1 point). 2, 3, 13, 12, 11 are worth 1/3 of a point and 7, 6, 5, and 4 are worth 0 points.</p>
+    <p>Bastoni look like clubs, Kope look like cups, Denari look like coins, and Spade look like swords.</p>
+    <p>Whoever wins the first trick gets an additional point.</p>
+    <p>The first player to play a card leads the trick. The next player must follow suit if possible. Only cards of the same suit matter when calculating the winner of the trick.
+    If a player cannot follow suit, they can play any card but it will never win the trick.</p>
+    <p>The player who wins the trick leads the next trick. The game continues until all cards have been played.</p>
+    <p>Players also have the option to declare special combinations of cards for additional points before their first turn.</p>
+    <p>This means everyone knows that the a certain player has certain cards in their hand, but than that player's team gets additional points.</p>
+    <p>Declarations are:</p>
+    <p>Napola means that the player has 3, 2 and 1 of the same suit. The player gets 3 points for this declaration.</p>
+    <p>Three of a kind means that the player has 3 cards of the same rank (only cards with ranks 3, 2, 1 are valid for this declaration). The player gets 3 points for this declaration.</p>
+    <p>Four of a kind means that the player has 4 cards of the same rank (only cards with ranks 3, 2, 1 are valid for this declaration). The player gets 4 points for this declaration.</p>
+    <p>The game is supposed to be played in silence.</p>
+    <p>Game ends when one of the teams reaches the points goal.</p>
+    <p>Have fun!</p>
+    <p>For more information about the game, visit the <a href="https://en.wikipedia.org/wiki/Tressette" target="_blank">Wikipedia page</a>.</p>
+`
+
+
 // DOM Elements
 const statusMessage = document.getElementById("status-message")
 const playerHandDiv = document.getElementById("player-hand")
@@ -64,9 +89,37 @@ const pointsGoal = document.getElementById("points-goal-input")
 const pointsGoalDisplay = document.getElementById("points-goal")
 const declarationArea = document.getElementById("declaration-button-area")
 const declarationsSection = document.getElementById("declarations-section")
+const declarationInfo = document.getElementById("declaration-info")
+const rulesSection = document.getElementById("rules")
+const rulesButton = document.getElementById("rules-button")
+
+rulesSection.innerHTML = rules_text // Set the rules text
+rulesCloseButton = document.createElement("button")
+rulesCloseButtonContainer = document.createElement("div")
+rulesCloseButton.textContent = "Close"
+rulesCloseButton.classList.add("rules-close-button")
+rulesCloseButtonContainer.classList.add("rules-close-button-container")
+rulesCloseButtonContainer.appendChild(rulesCloseButton)
+rulesSection.appendChild(rulesCloseButtonContainer) // Append the close button to the rules section
+
+rulesCloseButton.addEventListener("click", () => {
+    rulesSection.style.display = "none" // Hide the rules section
+    rulesButton.textContent = "Show Rules"
+})
 
 declarationsSection.addEventListener("click", (event) => {
     declarationsSection.style.display = "none" // Hide the declaration area
+})
+
+rulesButton.addEventListener("click", () => {
+    if (rulesSection.style.display === "none" || rulesSection.style.display === "") {
+        rulesSection.style.display = "block"
+        rulesButton.textContent = "Hide Rules"
+    }
+    else {
+        rulesSection.style.display = "none"
+        rulesButton.textContent = "Show Rules"
+    }
 })
 
 // New UI Elements
@@ -263,7 +316,7 @@ function handleMessage(message) {
             handleGameOver(message.payload)
             break
         case "declaration_confirmation":
-            updateScoresAfterDeclarationConfirmation(message.payload)
+            handleDeclarationConfirmation(message.payload)
             break
         case "error":
             handleGenericError(message.payload)
@@ -337,6 +390,7 @@ function handleYourTurn() {
     statusMessage.textContent = "Your turn!"
     highlightPlayableCards()
     renderDeclarations()
+    removeDeclarationInfo()
 }
 
 function handleGameState(payload) {
@@ -634,6 +688,40 @@ function updateScoresAfterTrick(playerId, points) {
             }
         }
     })
+}
+
+function handleDeclarationConfirmation(payload) {
+    updateScoresAfterDeclarationConfirmation(payload)
+    // find player name ('You' if it's me)
+    const playerName = payload.player_id === myPlayerId ? "You" : teamsInfo
+        .find((t) => t.players.some((p) => p.id === payload.player_id))
+        .players.find((p) => p.id === payload.player_id).name
+
+    let message = `${playerName} declared `
+    if (payload.declaration.declaration_type === "napola") {
+        message += `Napola ${payload.declaration.suit}`
+    } else if (payload.declaration.declaration_type === "three_or_four_of_kind") {
+        if (payload.points === 3 * 3) {
+            message += `Three of a Kind ${payload.declaration.rank} without ${payload.without_suit}`
+        } else if (payload.points === 4 * 3) {
+            message += `Four of a Kind ${payload.declaration.rank}`
+        }
+    }
+
+    if (payload.points > 0) {
+        declarationInfo.textContent = message
+        declarationInfo.style.display = "block"
+        declarationInfo.classList.add("declaration-info")
+        setTimeout(() => {
+            removeDeclarationInfo()
+        }, 5000) // Clear message after 5 seconds
+    }
+}
+
+function removeDeclarationInfo() {
+    declarationInfo.textContent = ""
+    declarationInfo.style.display = "none"
+    declarationInfo.classList.remove("declaration-info")
 }
 
 function updateScoresAfterDeclarationConfirmation(payload) {

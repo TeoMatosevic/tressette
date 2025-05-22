@@ -44,8 +44,11 @@ type DeclarePayload struct {
 }
 
 type DeclarationConfirmationPayload struct {
-	TeamID string `json:"team_id"` // ID of the team making the declaration
-	Points int    `json:"points"`  // Points awarded for the declaration
+	TeamID      string         `json:"team_id"`      // ID of the team making the declaration
+	PlayerID    string         `json:"player_id"`    // ID of the player making the declaration
+	Points      int            `json:"points"`       // Points awarded for the declaration
+	Declaration DeclarePayload `json:"declaration"`  // Declaration details
+	WithoutSuit shared.Suit    `json:"without_suit"` // Suit of the card involved in the declaration
 }
 
 // --- Server -> Client Payload Structs ---

@@ -583,8 +583,11 @@ func (g *Game) handleDeclaration(playerId string, declaration protocol.DeclarePa
 								g.ID, playerId, d, team.TeamNumber, team.ID, team.Score)
 							// Broadcast declaration
 							declarationPayload := protocol.DeclarationConfirmationPayload{
-								TeamID: team.ID,
-								Points: result.Points * 3, // Scale points
+								TeamID:      team.ID,
+								PlayerID:    player.ID,
+								Points:      result.Points * 3, // Scale points
+								Declaration: declaration,
+								WithoutSuit: result.WithoutSuit,
 							}
 							declarationMsg, _ := protocol.NewMessage("declaration_confirmation", declarationPayload)
 							g.broadcast(declarationMsg)
@@ -720,4 +723,3 @@ func (g *Game) GetPlayerIndex(playerID string) int {
 	}
 	return -1 // Not found
 }
-
