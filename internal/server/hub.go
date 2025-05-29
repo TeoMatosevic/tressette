@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"tressette-game/internal/database"
 	"tressette-game/internal/game"
 	"tressette-game/internal/protocol"
 	"tressette-game/internal/shared"
@@ -16,29 +17,31 @@ import (
 
 // clientMessage is a helper struct to pass messages along with the client reference.
 type clientMessage struct {
-	client  	*Client
-	message 	protocol.Message
+	client  *Client
+	message protocol.Message
 }
 
 const gameCodeLength = 5 // Length of the unique game code
 
 // Hub manages active WebSocket connections, lobbies, and game rooms.
 type Hub struct {
-	clients      	map[*Client]bool
-	lobbies      	map[string][]*Client    // Map game code to list of clients in the lobby
-	games        	map[string]*game.Game 	// Map game code to game instance
-	clientToGame 	map[*Client]string   	// Map client to game code (lobby or active game)
-	processMessage 	chan clientMessage
-	register       	chan *Client
-	unregister     	chan *Client
-	clientMu     	sync.RWMutex 
-	lobbyMu      	sync.RWMutex 
-	gameMu       	sync.RWMutex 
-	rng          	*rand.Rand  
+	clients        map[*Client]bool
+	lobbies        map[string][]*Client  // Map game code to list of clients in the lobby
+	games          map[string]*game.Game // Map game code to game instance
+	clientToGame   map[*Client]string    // Map client to game code (lobby or active game)
+	processMessage chan clientMessage
+	register       chan *Client
+	unregister     chan *Client
+	db             *database.Service
+	clientMu       sync.RWMutex
+	lobbyMu        sync.RWMutex
+	gameMu         sync.RWMutex
+	dbMu           sync.RWMutex
+	rng            *rand.Rand
 }
 
 // NewHub creates a new Hub instance.
-func NewHub() *Hub {
+func NewHub(db *database.Service) *Hub {
 	// Seed the random number generator
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
@@ -52,6 +55,7 @@ func NewHub() *Hub {
 		register:       make(chan *Client),
 		unregister:     make(chan *Client),
 		rng:            rng,
+		db:             db,
 	}
 }
 
@@ -150,7 +154,6 @@ func (h *Hub) Run() {
 				log.Printf("Client %s disconnected before joining/creating a game.", client.ID)
 			}
 
-
 		case clientMsg := <-h.processMessage:
 			// Process the message based on its type
 			h.handleMessage(clientMsg.client, clientMsg.message)
@@ -169,7 +172,7 @@ func (h *Hub) handleMessage(client *Client, msg protocol.Message) {
 	case "play_card", "declare":
 		h.handleGameAction(client, msg)
 	case "ping":
-		pongMsg, _ := protocol.NewMessage("pong", nil) 
+		pongMsg, _ := protocol.NewMessage("pong", nil)
 		client.send <- pongMsg
 	default:
 		log.Printf("Received unknown message type '%s' from client %s (%s)", msg.Type, client.ID, client.Name)
@@ -217,7 +220,7 @@ func (h *Hub) handleCreateGame(client *Client, msg protocol.Message) {
 	h.clientMu.Lock()
 	client.Name = payload.Name
 	client.DesiredTeam = payload.DesiredTeam // Set desired team
-	client.PointsGoal = payload.PointsGoal // Set points goal
+	client.PointsGoal = payload.PointsGoal   // Set points goal
 	h.clientToGame[client] = gameCode
 	h.clientMu.Unlock()
 
@@ -296,7 +299,7 @@ func (h *Hub) handleJoinGame(client *Client, msg protocol.Message) {
 	}
 
 	// Add client to lobby
-	client.Name = payload.Name // Set name before adding to lobby list
+	client.Name = payload.Name               // Set name before adding to lobby list
 	client.DesiredTeam = payload.DesiredTeam // Set desired team
 	client.PointsGoal = -1
 	newLobby := append(lobby, client)
@@ -343,14 +346,14 @@ func (h *Hub) handleJoinGame(client *Client, msg protocol.Message) {
 			}
 		}
 		gamePlayers := convertClientsToGamePlayers(finalLobby) // Use finalLobby slice
-		newGame := game.NewGame(gamePlayers, targetScore) 
+		newGame := game.NewGame(gamePlayers, targetScore, h.db)
 		h.games[gameCode] = newGame // Add to games map using gameCode
 
 		// Remove the lobby now that the game is created
 		delete(h.lobbies, gameCode)
 
 		h.lobbyMu.Unlock() // Unlock lobbyMu
-		h.gameMu.Unlock() // Unlock gameMu
+		h.gameMu.Unlock()  // Unlock gameMu
 
 		log.Printf("Game instance created for code %s with ID %s. Players: %v", gameCode, newGame.ID, playerNames(finalLobby))
 
@@ -388,7 +391,6 @@ func (h *Hub) handleGameAction(client *Client, msg protocol.Message) {
 	// Forward the message to the game instance for processing
 	gameInstance.HandlePlayerAction(client.ID, msg) // Pass client ID and message
 }
-
 
 // Helper to get player names for logging
 func playerNames(players []*Client) []string {
@@ -460,7 +462,6 @@ func (h *Hub) sendMessageToClient(clientID string, message []byte) {
 	}
 }
 
-
 // broadcastToLobby sends a message to all clients currently in a specific lobby.
 func (h *Hub) broadcastToLobby(gameCode string, message []byte) {
 	h.lobbyMu.RLock()
@@ -513,7 +514,6 @@ func (h *Hub) broadcastLobbyUpdate(gameCode string, lobby []*Client) {
 	h.broadcastToLobby(gameCode, msgBytes)
 }
 
-
 // sendErrorToClient sends a generic error message to a specific client.
 func (h *Hub) sendErrorToClient(client *Client, errorMsg string) {
 	payload := protocol.ErrorPayload{Message: errorMsg}
@@ -528,7 +528,7 @@ func (h *Hub) sendErrorToClient(client *Client, errorMsg string) {
 
 // sendJoinError sends a specific join error message to a client.
 func (h *Hub) sendJoinError(client *Client, errorMsg string) {
-	payload := protocol.JoinErrorPayload{Message: errorMsg} 
+	payload := protocol.JoinErrorPayload{Message: errorMsg}
 	msgBytes, err := protocol.NewMessage("join_error", payload)
 	if err != nil {
 		log.Printf("Error creating join_error message for client %s: %v", client.ID, err)
@@ -536,3 +536,4 @@ func (h *Hub) sendJoinError(client *Client, errorMsg string) {
 	}
 	h.sendMessageToClient(client.ID, msgBytes)
 }
+

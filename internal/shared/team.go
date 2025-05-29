@@ -8,17 +8,17 @@ import (
 type TeamEnum int
 
 const (
-	TeamRed   TeamEnum  = 1           // Team 1 (players 0 and 2)
-	TeamBlue  TeamEnum  = 2           // Team 2 (players 1 and 3)
+	TeamRed  TeamEnum = 1 // Team 1 (players 0 and 2)
+	TeamBlue TeamEnum = 2 // Team 2 (players 1 and 3)
 )
 
 // Team represents a team in the Tressette game.
 type Team struct {
-	ID         string    	`json:"id"`
-	Players    [2]*Player 	`json:"players"`
-	Score      int       	`json:"score"`
-	TotalScore int       	`json:"total_score"`   
-	TeamNumber int       	`json:"-"`
+	ID         string     `json:"id"`
+	Players    [2]*Player `json:"players"`
+	Score      int        `json:"score"`
+	TotalScore int        `json:"total_score"`
+	TeamNumber int        `json:"team_number"` // Logical team number (1 or 2)
 }
 
 // NewTeam creates a new team with the given logical number and players.
@@ -46,7 +46,8 @@ func (t *Team) ResetScore() {
 // Transfer score to total score.
 func (t *Team) TransferScore() {
 	// this is needed because t.Score is scaled by 3
-	s := (t.Score - t.Score % 3) / 3
+	s := (t.Score - t.Score%3) / 3
 	t.TotalScore += s
 	t.ResetScore()
 }
+

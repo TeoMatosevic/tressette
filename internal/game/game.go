@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
+	"time"
 
+	"tressette-game/internal/database"
 	"tressette-game/internal/protocol"
 	"tressette-game/internal/shared"
 
@@ -21,7 +23,7 @@ const (
 	Declaring      GameState = "Declaring" // Phase for declaring combinations (optional)
 	RoundOver      GameState = "RoundOver" // A round (10 tricks) is finished
 	GameOver       GameState = "GameOver"  // Target score reached
-	CardsPerPlayer int       = 10          // Number of cards dealt to each player
+	CardsPerPlayer int       = 4           // Number of cards dealt to each player
 )
 
 // MessageSender defines the function signature for sending messages back to clients.
@@ -42,12 +44,13 @@ type Game struct {
 	LedSuit              shared.Suit       `json:"led_suit"`
 	LastTrickWinnerIndex int               `json:"last_trick_winner_index"`
 	LastRoundStartIndex  int               `json:"last_round_start_index"`
+	db                   *database.Service `json:"-"`
 	mu                   sync.Mutex
 	sendMessage          MessageSender `json:"-"`
 }
 
 // NewGame initializes a new game instance.
-func NewGame(players [4]*shared.Player, targetScore int) *Game {
+func NewGame(players [4]*shared.Player, targetScore int, db *database.Service) *Game {
 	var teams [2]*shared.Team
 	var newPlayers [4]*shared.Player
 	var first, second, third, fourth *shared.Player
@@ -141,6 +144,7 @@ func NewGame(players [4]*shared.Player, targetScore int) *Game {
 		LedSuit:              "",
 		LastTrickWinnerIndex: -1,
 		LastRoundStartIndex:  0,
+		db:                   db,
 	}
 }
 
@@ -496,6 +500,21 @@ func (g *Game) endRound() {
 		gameOver = true
 		winningTeam = team
 		log.Printf("Game %s: Game Over! Team %d (ID: %s) wins.", g.ID, team.TeamNumber, team.ID)
+		now := time.Now()
+		g.db.Insert(database.GameResult{
+			ID:          g.ID,
+			Team1Score:  g.Teams[0].TotalScore,
+			Team2Score:  g.Teams[1].TotalScore,
+			Player1:     g.Teams[0].Players[0].Name,
+			Player2:     g.Teams[0].Players[1].Name,
+			Player3:     g.Teams[1].Players[0].Name,
+			Player4:     g.Teams[1].Players[1].Name,
+			Player1Team: g.Teams[0].TeamNumber,
+			Player2Team: g.Teams[0].TeamNumber,
+			Player3Team: g.Teams[1].TeamNumber,
+			Player4Team: g.Teams[1].TeamNumber,
+			CreatedAt:   now.Format(time.RFC3339),
+		})
 
 		// Broadcast game over
 		gameOverPayload := protocol.GameOverPayload{
