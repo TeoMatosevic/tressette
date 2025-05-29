@@ -23,7 +23,7 @@ const (
 	Declaring      GameState = "Declaring" // Phase for declaring combinations (optional)
 	RoundOver      GameState = "RoundOver" // A round (10 tricks) is finished
 	GameOver       GameState = "GameOver"  // Target score reached
-	CardsPerPlayer int       = 4           // Number of cards dealt to each player
+	CardsPerPlayer int       = 10          // Number of cards dealt to each player
 )
 
 // MessageSender defines the function signature for sending messages back to clients.
